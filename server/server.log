@@ -1,0 +1,7 @@
+werkzeug - WARNING -  * Debugger is active!
+werkzeug - INFO -  * Debugger PIN: 886-448-897
+root - INFO - File saved to uploads\00142_20990909_R_MLO_2.dcm
+werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 12:34:20] "POST /upload-dicom HTTP/1.1" 200 -
+werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 12:34:21] "OPTIONS /preprocess-image HTTP/1.1" 200 -
+werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 12:34:21] "[33mPOST /preprocess-image HTTP/1.1[0m" 404 -
+werkzeug - INFO -  * Detected change in 'C:\\Users\\qendr\\Desktop\\University\\Master\\Thesis\\Website\\server\\server.py', reloading
