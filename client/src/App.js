@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import UploadDICOM from './Components/UploadDICOM';
-import PreprocessedImage from './Components/PreprocessedImage';
-import PredictedImage from './Components/PredictImage'; // renamed from PredictImage
+import AnalyzedImage from './Components/AnalyzedImage';
 
 function App() {
   const [dicomImage, setDicomImage] = useState(null);
@@ -34,22 +33,34 @@ function AppContent({
 }) {
   const navigate = useNavigate();
 
-  const handlePreprocess = async () => {
+  const handleAnalyze = async () => {
     try {
-      const response = await fetch('http://localhost:5000/preprocess-dicom', {
+      // Step 1: Preprocess
+      const preResponse = await fetch('http://localhost:5000/preprocess-dicom', {
         method: 'POST',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to preprocess image');
-      }
+      if (!preResponse.ok) throw new Error('Preprocessing failed');
 
-      const blob = await response.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      setPreprocessedImage(imageUrl);
-      navigate('/preprocessed-image');
+      const preBlob = await preResponse.blob();
+      const preUrl = URL.createObjectURL(preBlob);
+      setPreprocessedImage(preUrl);
+
+      // Step 2: Predict
+      const predResponse = await fetch('http://localhost:5000/predict-mask', {
+        method: 'POST',
+      });
+
+      if (!predResponse.ok) throw new Error('Prediction failed');
+
+      const predBlob = await predResponse.blob();
+      const predUrl = URL.createObjectURL(predBlob);
+      setMaskImage(predUrl);
+
+      // Step 3: Navigate to analyzed-image
+      navigate('/analyzed-image');
     } catch (err) {
-      alert('Error preprocessing image: ' + err.message);
+      alert('Analysis failed: ' + err.message);
     }
   };
 
@@ -69,7 +80,7 @@ function AppContent({
             element={
               <UploadDICOM
                 setDicomImage={setDicomImage}
-                setPreprocessedImage={setPreprocessedImage}
+                navigateToImage={() => navigate('/image')}
               />
             }
           />
@@ -86,11 +97,11 @@ function AppContent({
                       style={{ width: '80%', height: 'auto', border: '1px solid black' }}
                     />
                     <br />
-                    <button className="button" onClick={handlePreprocess}>
-                      Preprocess Image
+                    <button className="button" onClick={handleAnalyze}>
+                      Analyze
                     </button>
                     <button className="button" onClick={() => navigate('/')}>
-                      Go Back and Upload a New File
+                      Upload New File
                     </button>
                   </div>
                 ) : (
@@ -101,19 +112,9 @@ function AppContent({
           />
 
           <Route
-            path="/preprocessed-image"
+            path="/analyzed-image"
             element={
-              <PreprocessedImage
-                preprocessedImage={preprocessedImage}
-                setMaskImage={setMaskImage}
-              />
-            }
-          />
-
-          <Route
-            path="/predicted-image"
-            element={
-              <PredictedImage
+              <AnalyzedImage
                 preprocessedImage={preprocessedImage}
                 maskImage={maskImage}
               />
