@@ -3,10 +3,12 @@ import './App.css';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import UploadDICOM from './Components/UploadDICOM';
 import PreprocessedImage from './Components/PreprocessedImage';
+import PredictedImage from './Components/PredictImage'; // renamed from PredictImage
 
 function App() {
   const [dicomImage, setDicomImage] = useState(null);
   const [preprocessedImage, setPreprocessedImage] = useState(null);
+  const [maskImage, setMaskImage] = useState(null);
 
   return (
     <Router>
@@ -15,12 +17,21 @@ function App() {
         setDicomImage={setDicomImage}
         preprocessedImage={preprocessedImage}
         setPreprocessedImage={setPreprocessedImage}
+        maskImage={maskImage}
+        setMaskImage={setMaskImage}
       />
     </Router>
   );
 }
 
-function AppContent({ dicomImage, setDicomImage, preprocessedImage, setPreprocessedImage }) {
+function AppContent({
+  dicomImage,
+  setDicomImage,
+  preprocessedImage,
+  setPreprocessedImage,
+  maskImage,
+  setMaskImage,
+}) {
   const navigate = useNavigate();
 
   const handlePreprocess = async () => {
@@ -91,7 +102,22 @@ function AppContent({ dicomImage, setDicomImage, preprocessedImage, setPreproces
 
           <Route
             path="/preprocessed-image"
-            element={<PreprocessedImage preprocessedImage={preprocessedImage} />}
+            element={
+              <PreprocessedImage
+                preprocessedImage={preprocessedImage}
+                setMaskImage={setMaskImage}
+              />
+            }
+          />
+
+          <Route
+            path="/predicted-image"
+            element={
+              <PredictedImage
+                preprocessedImage={preprocessedImage}
+                maskImage={maskImage}
+              />
+            }
           />
         </Routes>
       </div>
