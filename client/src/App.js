@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import './App.css';
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  useNavigate,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import UploadDICOM from './Components/UploadDICOM';
 import AnalyzedImage from './Components/AnalyzedImage';
 
@@ -94,15 +89,23 @@ function AppContent({
             path="/image"
             element={
               <div className="image-container">
-                <h4>Uploaded DICOM</h4>
-                <img src={dicomImage} alt="DICOM" />
-                <br />
-                <button className="button" onClick={handleAnalyze}>
-                  Analyze
-                </button>
-                <button className="button" onClick={() => navigate('/')}>
-                  Upload New File
-                </button>
+                {dicomImage ? (
+                  <div>
+                    <img
+                      src={dicomImage}
+                      alt="DICOM"
+                    />
+                    <br />
+                    <button className="button" onClick={handleAnalyze}>
+                      Analyze
+                    </button>
+                    <button className="button" onClick={() => navigate('/')}>
+                      Upload New File
+                    </button>
+                  </div>
+                ) : (
+                  <p>No image uploaded.</p>
+                )}
               </div>
             }
           />
