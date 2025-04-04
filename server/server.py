@@ -128,50 +128,94 @@ def preprocess_dicom():
 
 import time  # Import this at the beginning of your file
 
+
 @app.route('/predict-mask', methods=['POST'])
 def predict_mask():
     try:
+        # Paths
         preprocessed_path = os.path.join(app.config['PROCESSED_FOLDER'], 'preprocessed.png')
-        print(f"Reading image from: {preprocessed_path}")
+        original_dicom_path = os.path.join(app.config['UPLOAD_FOLDER'], 'latest.dcm')
 
-        # Load the preprocessed image
+        # Load preprocessed image for prediction
         preprocessed_image = cv2.imread(preprocessed_path, cv2.IMREAD_GRAYSCALE)
         if preprocessed_image is None:
-            raise ValueError("No preprocessed image found or image could not be read.")
+            raise ValueError("No preprocessed image found.")
 
-        print("Image loaded. Shape:", preprocessed_image.shape)
-
-        print("Predicting mask...")
-
-        # Predict the full mask using sliding window approach
-        predicted_mask = predict_full_mask_from_patches(
+        # Predict full mask using your sliding window function
+        pred_mask = predict_full_mask_from_patches(
             model,
             preprocessed_image,
             patch_size=(128, 128),
             stride=64,
             padding=32
         )
+        pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255  # Convert to 0-255
 
-        predicted_mask = (predicted_mask > 0.5).astype(np.uint8) * 255
+        # 👇 Retrieve preprocessing metadata
+        dicom_data = pydicom.dcmread(original_dicom_path)
+        pixel_data = dicom_data.pixel_array
+        if pixel_data.dtype != np.uint8:
+            pixel_data = np.uint8((pixel_data - np.min(pixel_data)) / (np.max(pixel_data) - np.min(pixel_data)) * 255)
+
+        # 👇 Re-run preprocessing to get padding/bbox/etc.
+        processed, padding, bbox, cropped_shape = preprocess_image(pixel_data)
+
+        # 👇 Postprocess mask
+        _, _, restored_mask = postprocess_mask(
+            pred_mask,
+            padding,
+            original_size=pixel_data.shape,
+            bbox=bbox,
+            cropped_shape=cropped_shape
+        )
+
+        # 👇 Overlay mask on original DICOM image
+        original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
+        color_mask = np.zeros_like(original_image)
+        color_mask[:, :, 1] = restored_mask  # Green channel
+
+        overlay = cv2.addWeighted(original_image, 0.8, color_mask, 0.4, 0)
 
         # Save to memory
         img_io = io.BytesIO()
-        image = Image.fromarray(predicted_mask)
-        image.save(img_io, 'PNG')
+        result_img = Image.fromarray(overlay)
+        result_img.save(img_io, 'PNG')
         img_io.seek(0)
 
-        # Save to disk
-        timestamp = int(time.time())
-        prediction_path = os.path.join(app.config['PREDICTIONS_FOLDER'], f'prediction_{timestamp}.png')
-        image.save(prediction_path)
-
-        print("Prediction complete.")
         return send_file(img_io, mimetype='image/png')
 
     except Exception as e:
-        print("ERROR during prediction:", str(e))
-        return jsonify({'error': f'Error predicting mask: {str(e)}'}), 500
+        print("Postprocessing Error:", e)
+        return jsonify({'error': str(e)}), 500
 
+
+
+def postprocess_mask(padded_image, padding, original_size, bbox, cropped_shape, target_size=(224, 224)):
+   
+    # Step 1: Extract the padding values (top, bottom, left, right)
+    top, bottom, left, right = padding
+    original_height, original_width = original_size
+
+    # Step 2: Remove the padding from the image (work with the padded 224x224 image)
+    image_without_padding = padded_image[top:target_size[0] - bottom, left:target_size[1] - right]
+
+    # Step 3: Resize the image based on the input aspect ratio to match the cropped shape
+    image_height, image_width = image_without_padding.shape[:2]
+    cropped_height, cropped_width = cropped_shape
+
+    # Resize the image to fit within the cropped shape (keeping aspect ratio)
+    resized_image = cv2.resize(image_without_padding, (cropped_width, cropped_height), interpolation=cv2.INTER_LINEAR)
+
+    # Step 4: Place the resized image into the expanded canvas based on the bounding box
+    x, y, w, h = bbox
+
+    # Create an empty canvas for the restored image (of the original size)
+    expanded_image = np.zeros((original_height, original_width), dtype=np.uint8)
+
+    # Ensure that we place the resized cropped region back into the correct location in the original image
+    expanded_image[y:y+h, x:x+w] = resized_image[:h, :w]  # Make sure the resized image fits in the bounding box area
+
+    return image_without_padding, resized_image, expanded_image
 
 
 def predict_full_mask_from_patches(model, image, patch_size=(128, 128), stride=64, padding=32):

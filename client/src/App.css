@@ -169,41 +169,22 @@ button:disabled {
   background-color: #d6d6d6;
   cursor: not-allowed;
 }
-
-/* Image Container */
-.dicom-image-container {
+.image-container {
   margin-top: 20px;
-  width: 30%;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
+  max-width: 800px;
+  width: 90%;
   background-color: #333;
-  padding: 10px;
+  padding: 20px;
   border-radius: 10px;
-}
-
-.dicom-image-container img {
-  width: 30%;
-  height: auto;
-  object-fit: contain;
-}
-
-
-.preprocessed-image-container {
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 2rem;
 }
 
-.dicom-img {
-  width: 150%;              /* Make the image span the full width */
-  max-width: 2000px;        /* Limit the image to a maximum width */
-  height: auto;             /* Maintain aspect ratio */
-  max-height: 800px;        /* Adjust the max height (optional) */
-  border: 1px solid black;
+.image-container img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 8px;
 }
-
-
