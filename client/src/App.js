@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-route
 import UploadDICOM from './Components/UploadDICOM';
 import AnalyzedImage from './Components/AnalyzedImage';
 
+
 function App() {
   const [dicomData, setDicomData] = useState({ imageUrl: null, fileName: null });
   const [preprocessedImage, setPreprocessedImage] = useState(null);

@@ -131,80 +131,86 @@ def preprocess_dicom():
 
 import base64
 
+import json
+
 @app.route('/predict-mask', methods=['POST'])
 def predict_mask():
     try:
-        # Query param to control whether to draw bounding boxes
-        show_boxes = request.args.get('show_boxes', 'true').lower() == 'true'
+        preprocessed_path = os.path.join(PROCESSED_FOLDER, 'preprocessed.png')
+        original_dicom_path = os.path.join(UPLOAD_FOLDER, 'latest.dcm')
 
-        # Paths
-        preprocessed_path = os.path.join(app.config['PROCESSED_FOLDER'], 'preprocessed.png')
-        original_dicom_path = os.path.join(app.config['UPLOAD_FOLDER'], 'latest.dcm')
-
-        # Load preprocessed image for prediction
         preprocessed_image = cv2.imread(preprocessed_path, cv2.IMREAD_GRAYSCALE)
         if preprocessed_image is None:
             raise ValueError("No preprocessed image found.")
 
-        # Predict full mask
-        pred_mask = predict_full_mask_from_patches(
-            model,
-            preprocessed_image,
-            patch_size=(128, 128),
-            stride=64,
-            padding=32
-        )
-        pred_mask = (pred_mask).astype(np.uint8) * 255
+        pred_mask = predict_full_mask_from_patches(model, preprocessed_image)
+        pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255
 
-        # Get original DICOM data and pixel array
         dicom_data = pydicom.dcmread(original_dicom_path)
         pixel_data = dicom_data.pixel_array
         if pixel_data.dtype != np.uint8:
             pixel_data = np.uint8((pixel_data - np.min(pixel_data)) / (np.max(pixel_data) - np.min(pixel_data)) * 255)
 
-        # Re-run preprocessing to retrieve padding and bounding box
         processed, padding, bbox, cropped_shape = preprocess_image(pixel_data)
 
-        # Postprocess mask to original size
         _, _, restored_mask = postprocess_mask(
-            pred_mask,
-            padding,
-            original_size=pixel_data.shape,
-            bbox=bbox,
-            cropped_shape=cropped_shape
+            pred_mask, padding, original_size=pixel_data.shape,
+            bbox=bbox, cropped_shape=cropped_shape
         )
 
-        # Extract bounding boxes from mask
-        bounding_boxes = bbox_from_mask(restored_mask)
+        # Save mask
+        np.save(os.path.join(PREDICTIONS_FOLDER, 'restored_mask.npy'), restored_mask)
 
-        # Create heatmap and overlay
+        # Save bounding boxes with safe int conversion
+        bounding_boxes = bbox_from_mask(restored_mask)
+        bounding_boxes = [[int(x) for x in box] for box in bounding_boxes]
+        
+        with open(os.path.join(PREDICTIONS_FOLDER, 'bounding_boxes.json'), 'w') as f:
+            json.dump({'boxes': bounding_boxes}, f)
+
+        # Overlay heatmap
         heatmap = cv2.applyColorMap(restored_mask, cv2.COLORMAP_JET)
         transparency_mask = restored_mask > 0
         transparency_mask = np.stack([transparency_mask] * 3, axis=-1)
-
         original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
-
         heatmap = cv2.GaussianBlur(heatmap, (17, 17), 20)
         heatmap[~transparency_mask] = 0
-
         overlay = cv2.addWeighted(original_image, 1, heatmap, 0.4, 0)
 
-        # Conditionally draw bounding boxes
-        if show_boxes:
-            for box in bounding_boxes:
-                x_min, y_min, x_max, y_max = box
-                cv2.rectangle(overlay, (x_min, y_min), (x_max, y_max), (255, 255, 0), 7)
-
-        # Convert overlay to image and return
         img_io = io.BytesIO()
-        result_img = Image.fromarray(overlay)
-        result_img.save(img_io, 'PNG')
+        Image.fromarray(overlay).save(img_io, 'PNG')
         img_io.seek(0)
-
         return send_file(img_io, mimetype='image/png')
-
     except Exception as e:
         print("Postprocessing Error:", e)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/get-bounding-boxes', methods=['GET'])
+def get_bounding_boxes():
+    try:
+        path = os.path.join(PREDICTIONS_FOLDER, 'bounding_boxes.json')
+        if not os.path.exists(path):
+            return jsonify({'error': 'No prediction data found'}), 404
+        with open(path, 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+
+def get_bounding_boxes():
+    try:
+        boxes_path = os.path.join(app.config['PREDICTIONS_FOLDER'], 'bounding_boxes.json')
+        if not os.path.exists(boxes_path):
+            return jsonify({'error': 'No prediction data found. Please run /predict-mask first.'}), 404
+
+        with open(boxes_path, 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
