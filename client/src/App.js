@@ -5,15 +5,15 @@ import UploadDICOM from './Components/UploadDICOM';
 import AnalyzedImage from './Components/AnalyzedImage';
 
 function App() {
-  const [dicomImage, setDicomImage] = useState(null);
+  const [dicomData, setDicomData] = useState({ imageUrl: null, fileName: null });
   const [preprocessedImage, setPreprocessedImage] = useState(null);
   const [maskImage, setMaskImage] = useState(null);
 
   return (
     <Router>
       <AppContent
-        dicomImage={dicomImage}
-        setDicomImage={setDicomImage}
+        dicomData={dicomData}
+        setDicomData={setDicomData}
         preprocessedImage={preprocessedImage}
         setPreprocessedImage={setPreprocessedImage}
         maskImage={maskImage}
@@ -24,8 +24,8 @@ function App() {
 }
 
 function AppContent({
-  dicomImage,
-  setDicomImage,
+  dicomData,
+  setDicomData,
   preprocessedImage,
   setPreprocessedImage,
   maskImage,
@@ -35,7 +35,6 @@ function AppContent({
 
   const handleAnalyze = async () => {
     try {
-      // Step 1: Preprocess
       const preResponse = await fetch('http://localhost:5000/preprocess-dicom', {
         method: 'POST',
       });
@@ -46,7 +45,6 @@ function AppContent({
       const preUrl = URL.createObjectURL(preBlob);
       setPreprocessedImage(preUrl);
 
-      // Step 2: Predict
       const predResponse = await fetch('http://localhost:5000/predict-mask', {
         method: 'POST',
       });
@@ -57,7 +55,6 @@ function AppContent({
       const predUrl = URL.createObjectURL(predBlob);
       setMaskImage(predUrl);
 
-      // Step 3: Navigate to analyzed-image
       navigate('/analyzed-image');
     } catch (err) {
       alert('Analysis failed: ' + err.message);
@@ -79,7 +76,7 @@ function AppContent({
             path="/"
             element={
               <UploadDICOM
-                setDicomImage={setDicomImage}
+                setDicomData={setDicomData}
                 navigateToImage={() => navigate('/image')}
               />
             }
@@ -89,12 +86,10 @@ function AppContent({
             path="/image"
             element={
               <div className="image-container">
-                {dicomImage ? (
+                {dicomData.imageUrl ? (
                   <div>
-                    <img
-                      src={dicomImage}
-                      alt="DICOM"
-                    />
+                    <h3>{dicomData.fileName}</h3>
+                    <img src={dicomData.imageUrl} alt="DICOM" />
                     <br />
                     <button className="button" onClick={handleAnalyze}>
                       Analyze
@@ -114,7 +109,7 @@ function AppContent({
             path="/analyzed-image"
             element={
               <AnalyzedImage
-                preprocessedImage={preprocessedImage}
+                fileName={dicomData.fileName}
                 maskImage={maskImage}
               />
             }

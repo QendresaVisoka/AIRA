@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 
-const UploadDICOM = ({ setDicomImage }) => {
+const UploadDICOM = ({ setDicomData }) => {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('No file chosen');
   const [error, setError] = useState('');
@@ -51,7 +51,7 @@ const UploadDICOM = ({ setDicomImage }) => {
       } else {
         const imageBlob = await response.blob();
         const imageUrl = URL.createObjectURL(imageBlob);
-        setDicomImage(imageUrl);
+        setDicomData({ imageUrl, fileName });
         navigate('/image');
       }
     } catch (err) {
@@ -68,19 +68,23 @@ const UploadDICOM = ({ setDicomImage }) => {
         <p>Drag & drop your DICOM file here, or click to select a file</p>
       </div>
 
-      {/* Hidden native file input */}
       <input
         type="file"
         accept=".dcm"
         ref={fileInputRef}
         style={{ display: 'none' }}
         onChange={(e) => {
-          setFile(e.target.files[0]);
-          setFileName(e.target.files[0]?.name || 'No file chosen');
+          const selectedFile = e.target.files[0];
+          if (selectedFile) {
+            setFile(selectedFile);
+            setFileName(selectedFile.name);
+          } else {
+            setFile(null);
+            setFileName('No file chosen');
+          }
         }}
       />
 
-      {/* Custom white button */}
       <button
         className="choose-file-button"
         onClick={() => fileInputRef.current.click()}
@@ -89,7 +93,6 @@ const UploadDICOM = ({ setDicomImage }) => {
         Choose File
       </button>
 
-      {/* Separate file name display */}
       <p className="file-name">{fileName}</p>
 
       {error && <p className="error-text">{error}</p>}

@@ -1,11 +1,10 @@
 import React from 'react';
 
-const AnalyzedImage = ({ preprocessedImage, maskImage }) => {
+const AnalyzedImage = ({ fileName, maskImage }) => {
   return (
     <div className="image-container">
-        <div>
+      <h3>{fileName}</h3>
           <img src={maskImage} alt="Mask" />
-        </div>
     </div>
   );
 };
