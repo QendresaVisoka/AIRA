@@ -126,8 +126,6 @@ def preprocess_dicom():
         return jsonify({'error': f'Error processing DICOM file: {str(e)}'}), 500
     
 
-import time  # Import this at the beginning of your file
-
 
 @app.route('/predict-mask', methods=['POST'])
 def predict_mask():
@@ -149,18 +147,18 @@ def predict_mask():
             stride=64,
             padding=32
         )
-        pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255  # Convert to 0-255
+        pred_mask = (pred_mask).astype(np.uint8) * 255   # Convert to 0-255
 
-        # 👇 Retrieve preprocessing metadata
+        # Retrieve preprocessing metadata
         dicom_data = pydicom.dcmread(original_dicom_path)
         pixel_data = dicom_data.pixel_array
         if pixel_data.dtype != np.uint8:
             pixel_data = np.uint8((pixel_data - np.min(pixel_data)) / (np.max(pixel_data) - np.min(pixel_data)) * 255)
 
-        # 👇 Re-run preprocessing to get padding/bbox/etc.
+        # Re-run preprocessing to get padding/bbox/etc.
         processed, padding, bbox, cropped_shape = preprocess_image(pixel_data)
 
-        # 👇 Postprocess mask
+        # Postprocess mask
         _, _, restored_mask = postprocess_mask(
             pred_mask,
             padding,
@@ -169,12 +167,30 @@ def predict_mask():
             cropped_shape=cropped_shape
         )
 
-        # 👇 Overlay mask on original DICOM image
-        original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
-        color_mask = np.zeros_like(original_image)
-        color_mask[:, :, 1] = restored_mask  # Green channel
+        # Apply a colormap to the restored mask
+        heatmap = cv2.applyColorMap(restored_mask, cv2.COLORMAP_JET)
 
-        overlay = cv2.addWeighted(original_image, 0.8, color_mask, 0.4, 0)
+        transparency_mask = restored_mask > 0
+
+        transparency_mask = np.stack([transparency_mask] * 3, axis=-1)  # Convert to 3 channels
+
+        cv2.imwrite('debug_pred_mask.png', restored_mask)
+        cv2.imwrite('debug_heatmap.png', heatmap)
+
+        print(restored_mask.min(), restored_mask.max())
+
+        # Convert original image to color (3 channels) to overlay with the heatmap
+        original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
+
+        if heatmap.shape[-1] == 3:  # Assuming heatmap is not already BGR
+            heatmap = cv2.cvtColor(heatmap, cv2.COLOR_RGB2BGR)
+
+        heatmap = cv2.GaussianBlur(heatmap, (11, 11), 10)
+
+        heatmap[~transparency_mask] = 0
+
+        # Overlay the heatmap on the original image
+        overlay = cv2.addWeighted(original_image, 0.8, heatmap, 0.9, 0)
 
         # Save to memory
         img_io = io.BytesIO()
@@ -187,6 +203,7 @@ def predict_mask():
     except Exception as e:
         print("Postprocessing Error:", e)
         return jsonify({'error': str(e)}), 500
+
 
 
 
