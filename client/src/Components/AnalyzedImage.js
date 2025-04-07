@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
   const navigate = useNavigate();
 
-  const [showBoxes, setShowBoxes] = useState(true);
+  const [showBoxes, setShowBoxes] = useState(true);   // Bounding boxes visibility
+  const [showHeatmap, setShowHeatmap] = useState(true); // Default heatmap is visible
   const [boxes, setBoxes] = useState([]);
+  const [overlayImage, setOverlayImage] = useState(null);  // State to store the overlay image
   const [imageLoaded, setImageLoaded] = useState(false);
   const canvasRef = useRef(null);
 
@@ -22,6 +24,25 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     };
     fetchBoundingBoxes();
   }, []);
+
+  // Fetch overlay image from the server (created with heatmap overlay)
+  useEffect(() => {
+    const fetchOverlayImage = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/get-overlay?' + new Date().getTime()); // Cache busting
+        if (res.ok) {
+          const blob = await res.blob();
+          const overlayImageUrl = URL.createObjectURL(blob);
+          setOverlayImage(overlayImageUrl);  // Set the overlay image URL from the response
+        } else {
+          alert('No overlay image found');
+        }
+      } catch (err) {
+        alert('Failed to load overlay image: ' + err.message);
+      }
+    };
+    fetchOverlayImage();
+  }, []); // Only fetch overlay once on mount
 
   // Draw bounding boxes when toggled or image loads
   const drawBoxes = useCallback(() => {
@@ -57,7 +78,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
 
   useEffect(() => {
     drawBoxes();
-  }, [drawBoxes]);
+  }, [drawBoxes]);  // Re-run drawing if bounding boxes change
 
   return (
     <div className="image-container">
@@ -85,9 +106,10 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
 
         {/* Analyzed Image with Canvas Overlay on the Right */}
         <div style={{ position: 'relative', maxWidth: '48%' }}>
+          {/* Display overlay image when heatmap toggle is on */}
           <img
             id="analyzed-image"
-            src={maskImage}
+            src={showHeatmap && overlayImage ? overlayImage : maskImage} // Use overlayImage when heatmap is visible
             alt="Analyzed"
             onLoad={() => setImageLoaded(true)}
             style={{ width: '100%', display: 'block' }}
@@ -126,9 +148,23 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
             {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
           </span>
         </div>
+
+        <div className="custom-toggle" style={{ marginTop: '20px' }}>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={showHeatmap}
+              onChange={() => setShowHeatmap(prev => !prev)}  // Toggle heatmap visibility
+            />
+            <span className="slider"></span>
+          </label>
+          <span style={{ marginLeft: '12px' }}>
+            {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
+          </span>
+        </div>
       </div>
     </div>
   );
-}  
+};
 
 export default AnalyzedImage;

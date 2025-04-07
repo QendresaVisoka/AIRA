@@ -11,6 +11,8 @@ from PIL import Image
 import time
 from scipy.ndimage import label
 import base64
+from flask import send_from_directory
+
 
 app = Flask(__name__)
 CORS(app)
@@ -175,11 +177,15 @@ def predict_mask():
         original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
         heatmap = cv2.GaussianBlur(heatmap, (17, 17), 20)
         heatmap[~transparency_mask] = 0
-        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+        #heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+
+
         overlay = cv2.addWeighted(original_image, 1, heatmap, 0.4, 0)
 
+        cv2.imwrite(os.path.join(PREDICTIONS_FOLDER, 'overlay.png'), overlay)
+
         img_io = io.BytesIO()
-        Image.fromarray(overlay).save(img_io, 'PNG')
+        Image.fromarray(original_image).save(img_io, 'PNG')
         img_io.seek(0)
         return send_file(img_io, mimetype='image/png')
     except Exception as e:
@@ -198,6 +204,19 @@ def get_bounding_boxes():
         return jsonify(data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/get-overlay', methods=['GET'])
+def get_overlay():
+    try:
+        # Serve the overlay image from the PREDICTIONS_FOLDER directory
+        overlay_path = os.path.join(PREDICTIONS_FOLDER, 'overlay.png')
+        if not os.path.exists(overlay_path):
+            return jsonify({'error': 'No overlay image found'}), 404
+        return send_from_directory(PREDICTIONS_FOLDER, 'overlay.png')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 
 
