@@ -164,7 +164,7 @@ def predict_mask():
         # Save bounding boxes with safe int conversion
         bounding_boxes = bbox_from_mask(restored_mask)
         bounding_boxes = [[int(x) for x in box] for box in bounding_boxes]
-        
+
         with open(os.path.join(PREDICTIONS_FOLDER, 'bounding_boxes.json'), 'w') as f:
             json.dump({'boxes': bounding_boxes}, f)
 
@@ -175,6 +175,7 @@ def predict_mask():
         original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
         heatmap = cv2.GaussianBlur(heatmap, (17, 17), 20)
         heatmap[~transparency_mask] = 0
+        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
         overlay = cv2.addWeighted(original_image, 1, heatmap, 0.4, 0)
 
         img_io = io.BytesIO()

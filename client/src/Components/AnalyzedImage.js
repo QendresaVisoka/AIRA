@@ -63,38 +63,72 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     <div className="image-container">
       <h3>{fileName}</h3>
 
-      <div className="image-pair" style={{ position: 'relative', display: 'inline-block' }}>
-        <img
-          id="analyzed-image"
-          src={maskImage}
-          alt="Analyzed"
-          onLoad={() => setImageLoaded(true)}
-          style={{ display: 'block', maxWidth: '100%' }}
-        />
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            pointerEvents: 'none',
-            width: '100%',
-            height: '100%',
-          }}
-        />
+      <div
+        className="image-pair"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '20px',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+        }}
+      >
+        {/* Original Image on the Left */}
+        <div style={{ maxWidth: '48%' }}>
+          <img
+            src={originalImage}
+            alt="Original"
+            className="img-original"
+            style={{ width: '100%', display: 'block' }}
+          />
+        </div>
+
+        {/* Analyzed Image with Canvas Overlay on the Right */}
+        <div style={{ position: 'relative', maxWidth: '48%' }}>
+          <img
+            id="analyzed-image"
+            src={maskImage}
+            alt="Analyzed"
+            onLoad={() => setImageLoaded(true)}
+            style={{ width: '100%', display: 'block' }}
+          />
+          <canvas
+            ref={canvasRef}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              pointerEvents: 'none',
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        </div>
       </div>
 
-      <button className="top-left-button" onClick={() => navigate('/image')}>
-        Back
-      </button>
-      <button className="button" onClick={() => navigate('/')}>
-        Upload New File
-      </button>
-      <button className="button" style={{ marginTop: '20px' }} onClick={() => setShowBoxes(prev => !prev)}>
-        {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
-      </button>
+      <div style={{ marginTop: '30px' }}>
+        <button className="top-left-button" onClick={() => navigate('/image')}>
+          Back
+        </button>
+        <button className="button" onClick={() => navigate('/')}>
+          Upload New File
+        </button>
+        <div className="custom-toggle" style={{ marginTop: '20px' }}>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={showBoxes}
+              onChange={() => setShowBoxes(prev => !prev)}
+            />
+            <span className="slider"></span>
+          </label>
+          <span style={{ marginLeft: '12px' }}>
+            {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
+          </span>
+        </div>
+      </div>
     </div>
   );
-};
+}  
 
 export default AnalyzedImage;
