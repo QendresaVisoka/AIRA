@@ -167,6 +167,9 @@ def predict_mask():
             cropped_shape=cropped_shape
         )
 
+        # Get bounding boxes from the mask
+        bounding_boxes = bbox_from_mask(restored_mask)
+
         # Apply a colormap to the restored mask
         heatmap = cv2.applyColorMap(restored_mask, cv2.COLORMAP_JET)
 
@@ -187,7 +190,11 @@ def predict_mask():
         heatmap[~transparency_mask] = 0
 
         # Overlay the heatmap on the original image
-        overlay = cv2.addWeighted(original_image, 1, heatmap, 0.9, 0)
+        overlay = cv2.addWeighted(original_image, 1, heatmap, 0.4, 0)
+
+        for box in bounding_boxes:
+            x_min, y_min, x_max, y_max = box
+            cv2.rectangle(overlay, (x_min, y_min), (x_max, y_max), (255, 255, 0), 7)
 
         # Save to memory
         img_io = io.BytesIO()
@@ -201,6 +208,20 @@ def predict_mask():
         print("Postprocessing Error:", e)
         return jsonify({'error': str(e)}), 500
 
+from scipy.ndimage import label
+
+def bbox_from_mask(mask):
+    """Extract bounding box coordinates from a binary mask"""
+    mask = mask.squeeze()
+    components, num_features = label(mask)
+    bboxes = []
+    for i in range(1, num_features + 1):
+        rows, cols = np.where(components == i)
+        if rows.size > 0 and cols.size > 0:
+            x_min, x_max = cols.min(), cols.max()
+            y_min, y_max = rows.min(), rows.max()
+            bboxes.append([x_min, y_min, x_max, y_max])
+    return bboxes
 
 
 
