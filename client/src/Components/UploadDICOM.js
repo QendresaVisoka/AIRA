@@ -24,9 +24,7 @@ const UploadDICOM = ({ setDicomData }) => {
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
-    accept: {
-      'application/dicom': ['.dcm'],
-    },
+    accept: { 'application/dicom': ['.dcm'] },
     multiple: false,
   });
 
@@ -48,12 +46,22 @@ const UploadDICOM = ({ setDicomData }) => {
       if (!response.ok) {
         const result = await response.json();
         setError(result.error || 'Unknown error occurred.');
-      } else {
-        const imageBlob = await response.blob();
-        const imageUrl = URL.createObjectURL(imageBlob);
-        setDicomData({ imageUrl, fileName });
-        navigate('/image');
+        return;
       }
+
+      const imageBlob = await response.blob();
+
+      // Convert blob to base64 using FileReader
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result;
+        setDicomData({
+          imageUrl: base64,   // base64 string (data:image/png;base64,...)
+          fileName: fileName,
+        });
+        navigate('/image');
+      };
+      reader.readAsDataURL(imageBlob); // <-- this does the magic
     } catch (err) {
       setError('Error uploading file: ' + err.message);
     }
@@ -94,7 +102,6 @@ const UploadDICOM = ({ setDicomData }) => {
       </button>
 
       <p className="file-name">{fileName}</p>
-
       {error && <p className="error-text">{error}</p>}
 
       <button className="upload-button" onClick={handleUpload}>

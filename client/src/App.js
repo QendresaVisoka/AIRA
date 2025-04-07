@@ -91,11 +91,11 @@ function AppContent({
                     <h3>{dicomData.fileName}</h3>
                     <img src={dicomData.imageUrl} alt="DICOM" />
                     <br />
+                    <button className="top-left-button" onClick={() => navigate('/')}>
+                      Back
+                    </button>
                     <button className="button" onClick={handleAnalyze}>
                       Analyze
-                    </button>
-                    <button className="button" onClick={() => navigate('/')}>
-                      Upload New File
                     </button>
                   </div>
                 ) : (
@@ -110,6 +110,7 @@ function AppContent({
             element={
               <AnalyzedImage
                 fileName={dicomData.fileName}
+                originalImage={dicomData.imageUrl}
                 maskImage={maskImage}
               />
             }

@@ -174,9 +174,6 @@ def predict_mask():
 
         transparency_mask = np.stack([transparency_mask] * 3, axis=-1)  # Convert to 3 channels
 
-        cv2.imwrite('debug_pred_mask.png', restored_mask)
-        cv2.imwrite('debug_heatmap.png', heatmap)
-
         print(restored_mask.min(), restored_mask.max())
 
         # Convert original image to color (3 channels) to overlay with the heatmap
@@ -185,12 +182,12 @@ def predict_mask():
         if heatmap.shape[-1] == 3:  # Assuming heatmap is not already BGR
             heatmap = cv2.cvtColor(heatmap, cv2.COLOR_RGB2BGR)
 
-        heatmap = cv2.GaussianBlur(heatmap, (11, 11), 10)
+        heatmap = cv2.GaussianBlur(heatmap, (17, 17), 20)
 
         heatmap[~transparency_mask] = 0
 
         # Overlay the heatmap on the original image
-        overlay = cv2.addWeighted(original_image, 0.8, heatmap, 0.9, 0)
+        overlay = cv2.addWeighted(original_image, 1, heatmap, 0.9, 0)
 
         # Save to memory
         img_io = io.BytesIO()
