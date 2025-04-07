@@ -201,24 +201,6 @@ def get_bounding_boxes():
 
 
 
-
-def get_bounding_boxes():
-    try:
-        boxes_path = os.path.join(app.config['PREDICTIONS_FOLDER'], 'bounding_boxes.json')
-        if not os.path.exists(boxes_path):
-            return jsonify({'error': 'No prediction data found. Please run /predict-mask first.'}), 404
-
-        with open(boxes_path, 'r') as f:
-            data = json.load(f)
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-
-
-
-
 def bbox_from_mask(mask):
     """Extract bounding box coordinates from a binary mask"""
     mask = mask.squeeze()
