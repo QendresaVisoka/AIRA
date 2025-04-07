@@ -9,6 +9,8 @@ import cv2
 import io
 from PIL import Image
 import time
+from scipy.ndimage import label
+import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -127,9 +129,14 @@ def preprocess_dicom():
     
 
 
+import base64
+
 @app.route('/predict-mask', methods=['POST'])
 def predict_mask():
     try:
+        # Query param to control whether to draw bounding boxes
+        show_boxes = request.args.get('show_boxes', 'true').lower() == 'true'
+
         # Paths
         preprocessed_path = os.path.join(app.config['PROCESSED_FOLDER'], 'preprocessed.png')
         original_dicom_path = os.path.join(app.config['UPLOAD_FOLDER'], 'latest.dcm')
@@ -139,7 +146,7 @@ def predict_mask():
         if preprocessed_image is None:
             raise ValueError("No preprocessed image found.")
 
-        # Predict full mask using your sliding window function
+        # Predict full mask
         pred_mask = predict_full_mask_from_patches(
             model,
             preprocessed_image,
@@ -147,18 +154,18 @@ def predict_mask():
             stride=64,
             padding=32
         )
-        pred_mask = (pred_mask).astype(np.uint8) * 255   # Convert to 0-255
+        pred_mask = (pred_mask).astype(np.uint8) * 255
 
-        # Retrieve preprocessing metadata
+        # Get original DICOM data and pixel array
         dicom_data = pydicom.dcmread(original_dicom_path)
         pixel_data = dicom_data.pixel_array
         if pixel_data.dtype != np.uint8:
             pixel_data = np.uint8((pixel_data - np.min(pixel_data)) / (np.max(pixel_data) - np.min(pixel_data)) * 255)
 
-        # Re-run preprocessing to get padding/bbox/etc.
+        # Re-run preprocessing to retrieve padding and bounding box
         processed, padding, bbox, cropped_shape = preprocess_image(pixel_data)
 
-        # Postprocess mask
+        # Postprocess mask to original size
         _, _, restored_mask = postprocess_mask(
             pred_mask,
             padding,
@@ -167,36 +174,28 @@ def predict_mask():
             cropped_shape=cropped_shape
         )
 
-        # Get bounding boxes from the mask
+        # Extract bounding boxes from mask
         bounding_boxes = bbox_from_mask(restored_mask)
 
-        # Apply a colormap to the restored mask
+        # Create heatmap and overlay
         heatmap = cv2.applyColorMap(restored_mask, cv2.COLORMAP_JET)
-
         transparency_mask = restored_mask > 0
+        transparency_mask = np.stack([transparency_mask] * 3, axis=-1)
 
-        transparency_mask = np.stack([transparency_mask] * 3, axis=-1)  # Convert to 3 channels
-
-        print(restored_mask.min(), restored_mask.max())
-
-        # Convert original image to color (3 channels) to overlay with the heatmap
         original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
 
-        if heatmap.shape[-1] == 3:  # Assuming heatmap is not already BGR
-            heatmap = cv2.cvtColor(heatmap, cv2.COLOR_RGB2BGR)
-
         heatmap = cv2.GaussianBlur(heatmap, (17, 17), 20)
-
         heatmap[~transparency_mask] = 0
 
-        # Overlay the heatmap on the original image
         overlay = cv2.addWeighted(original_image, 1, heatmap, 0.4, 0)
 
-        for box in bounding_boxes:
-            x_min, y_min, x_max, y_max = box
-            cv2.rectangle(overlay, (x_min, y_min), (x_max, y_max), (255, 255, 0), 7)
+        # Conditionally draw bounding boxes
+        if show_boxes:
+            for box in bounding_boxes:
+                x_min, y_min, x_max, y_max = box
+                cv2.rectangle(overlay, (x_min, y_min), (x_max, y_max), (255, 255, 0), 7)
 
-        # Save to memory
+        # Convert overlay to image and return
         img_io = io.BytesIO()
         result_img = Image.fromarray(overlay)
         result_img.save(img_io, 'PNG')
@@ -208,7 +207,10 @@ def predict_mask():
         print("Postprocessing Error:", e)
         return jsonify({'error': str(e)}), 500
 
-from scipy.ndimage import label
+
+
+
+
 
 def bbox_from_mask(mask):
     """Extract bounding box coordinates from a binary mask"""

@@ -223,3 +223,12 @@ button:disabled {
   margin-top: 20px;
   justify-content: center;
 }
+
+
+.bounding-box {
+  position: absolute;
+  border: 2px solid yellow;
+  box-shadow: 0 0 10px yellow;
+  pointer-events: none;
+  z-index: 5;
+}
