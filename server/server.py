@@ -159,6 +159,11 @@ def predict_mask():
             pred_mask, padding, original_size=pixel_data.shape,
             bbox=bbox, cropped_shape=cropped_shape
         )
+        
+        if np.sum(restored_mask) ==0:
+            print("No Tumor detected")
+        else:
+            print("Tumor detected")
 
         # Save mask
         np.save(os.path.join(PREDICTIONS_FOLDER, 'restored_mask.npy'), restored_mask)

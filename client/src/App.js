@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-route
 import UploadDICOM from './Components/UploadDICOM';
 import AnalyzedImage from './Components/AnalyzedImage';
 
-
 function App() {
   const [dicomData, setDicomData] = useState({ imageUrl: null, fileName: null });
   const [preprocessedImage, setPreprocessedImage] = useState(null);
@@ -27,14 +26,15 @@ function App() {
 function AppContent({
   dicomData,
   setDicomData,
-  preprocessedImage,
   setPreprocessedImage,
   maskImage,
   setMaskImage,
 }) {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleAnalyze = async () => {
+    setLoading(true);
     try {
       const preResponse = await fetch('http://localhost:5000/preprocess-dicom', {
         method: 'POST',
@@ -59,6 +59,8 @@ function AppContent({
       navigate('/analyzed-image');
     } catch (err) {
       alert('Analysis failed: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,9 +97,16 @@ function AppContent({
                     <button className="top-left-button" onClick={() => navigate('/')}>
                       Back
                     </button>
-                    <button className="button" onClick={handleAnalyze}>
-                      Analyze
-                    </button>
+                    {loading ? (
+                      <div className="loading-container">
+                        <span className="loader"></span>
+                        <p>Analyzing</p>
+                      </div>
+                    ) : (
+                      <button className="button" onClick={handleAnalyze}>
+                        Analyze
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <p>No image uploaded.</p>
