@@ -141,26 +141,33 @@ def predict_mask():
         preprocessed_path = os.path.join(PROCESSED_FOLDER, 'preprocessed.png')
         original_dicom_path = os.path.join(UPLOAD_FOLDER, 'latest.dcm')
 
-        preprocessed_image = cv2.imread(preprocessed_path, cv2.IMREAD_GRAYSCALE)
-        if preprocessed_image is None:
-            raise ValueError("No preprocessed image found.")
+        if not os.path.exists(preprocessed_path) or not os.path.exists(original_dicom_path):
+            raise ValueError("Required files for prediction not found.")
 
-        pred_mask = predict_full_mask_from_patches(model, preprocessed_image)
-        pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255
-
+        # Load DICOM and pixel data safely
         dicom_data = pydicom.dcmread(original_dicom_path)
+
         pixel_data = dicom_data.pixel_array
         if pixel_data.dtype != np.uint8:
             pixel_data = np.uint8((pixel_data - np.min(pixel_data)) / (np.max(pixel_data) - np.min(pixel_data)) * 255)
 
-        processed, padding, bbox, cropped_shape = preprocess_image(pixel_data)
+        # Load preprocessed image
+        preprocessed_image = cv2.imread(preprocessed_path, cv2.IMREAD_GRAYSCALE)
+        if preprocessed_image is None:
+            raise ValueError("Preprocessed image could not be read.")
 
+        # Predict mask
+        pred_mask = predict_full_mask_from_patches(model, preprocessed_image)
+        pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255
+
+        # Postprocess
+        processed, padding, bbox, cropped_shape = preprocess_image(pixel_data)
         _, _, restored_mask = postprocess_mask(
             pred_mask, padding, original_size=pixel_data.shape,
             bbox=bbox, cropped_shape=cropped_shape
         )
-        
-        if np.sum(restored_mask) ==0:
+
+        if np.sum(restored_mask) == 0:
             print("No Tumor detected")
         else:
             print("Tumor detected")
@@ -168,34 +175,35 @@ def predict_mask():
         # Save mask
         np.save(os.path.join(PREDICTIONS_FOLDER, 'restored_mask.npy'), restored_mask)
 
-        # Save bounding boxes with safe int conversion
+        # Save bounding boxes
         bounding_boxes = bbox_from_mask(restored_mask)
         bounding_boxes = [[int(x) for x in box] for box in bounding_boxes]
 
-        with open(os.path.join(PREDICTIONS_FOLDER, 'bounding_boxes.json'), 'w') as f:
-            json.dump({'boxes': bounding_boxes}, f)
+        pixel_spacing = dicom_data.get("PixelSpacing", [1.0, 1.0])
+        pixel_spacing = [float(x) for x in pixel_spacing]
 
-        # Overlay heatmap
+        with open(os.path.join(PREDICTIONS_FOLDER, 'bounding_boxes.json'), 'w') as f:
+            json.dump({'boxes': bounding_boxes, 'pixel_spacing': pixel_spacing}, f)
+
+        # Create overlay
         heatmap = cv2.applyColorMap(restored_mask, cv2.COLORMAP_JET)
         transparency_mask = restored_mask > 0
         transparency_mask = np.stack([transparency_mask] * 3, axis=-1)
         original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
         heatmap = cv2.GaussianBlur(heatmap, (17, 17), 20)
         heatmap[~transparency_mask] = 0
-        #heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
-
-
         overlay = cv2.addWeighted(original_image, 1, heatmap, 0.4, 0)
-
         cv2.imwrite(os.path.join(PREDICTIONS_FOLDER, 'overlay.png'), overlay)
 
         img_io = io.BytesIO()
         Image.fromarray(original_image).save(img_io, 'PNG')
         img_io.seek(0)
         return send_file(img_io, mimetype='image/png')
+
     except Exception as e:
         print("Postprocessing Error:", e)
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/get-bounding-boxes', methods=['GET'])

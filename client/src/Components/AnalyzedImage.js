@@ -10,6 +10,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
   const [overlayImage, setOverlayImage] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const canvasRef = useRef(null);
+  const [pixelSpacing, setPixelSpacing] = useState([1.0, 1.0]);
 
   // Fetch bounding boxes
   useEffect(() => {
@@ -18,6 +19,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
         const res = await fetch('http://localhost:5000/get-bounding-boxes');
         const data = await res.json();
         if (data.boxes) setBoxes(data.boxes);
+        if (data.pixel_spacing) setPixelSpacing(data.pixel_spacing);
       } catch (err) {
         alert('Failed to load bounding boxes: ' + err.message);
       }
@@ -77,12 +79,20 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     drawBoxes();
   }, [drawBoxes]);
 
-  // Helper: calculate tumor width and height from bounding boxes
   const getTumorSizes = () => {
+    const [rowSpacing, colSpacing] = pixelSpacing;
     return boxes.map(([x1, y1, x2, y2], idx) => {
-      const width = x2 - x1;
-      const height = y2 - y1;
-      return { id: idx + 1, width, height };
+      const widthPx = x2 - x1;
+      const heightPx = y2 - y1;
+      const widthMM = (widthPx * colSpacing).toFixed(1);
+      const heightMM = (heightPx * rowSpacing).toFixed(1);
+      return {
+        id: idx + 1,
+        widthPx,
+        heightPx,
+        widthMM,
+        heightMM
+      };
     });
   };
 
@@ -161,8 +171,15 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
             {boxes.length === 0 ? (
               <p>No tumors detected.</p>
             ) : (
-              getTumorSizes().map(({ id, width, height }) => (
-                <p key={id}>Tumor {id}: {width}px × {height}px</p>
+              getTumorSizes().map(({ id, widthPx, heightPx, widthMM, heightMM }) => (
+                <div key={id}>
+                  <h5> Tumor {id}:</h5>
+                  <p>
+                    {widthPx}px × {heightPx}px
+                    <br/>
+                    ({widthMM}mm × {heightMM}mm)
+                  </p>
+                </div>
               ))
             )}
           </div>
