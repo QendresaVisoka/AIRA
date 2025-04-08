@@ -77,6 +77,15 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     drawBoxes();
   }, [drawBoxes]);
 
+  // Helper: calculate tumor width and height from bounding boxes
+  const getTumorSizes = () => {
+    return boxes.map(([x1, y1, x2, y2], idx) => {
+      const width = x2 - x1;
+      const height = y2 - y1;
+      return { id: idx + 1, width, height };
+    });
+  };
+
   return (
     <div className="image-container">
       <h3>{fileName}</h3>
@@ -116,7 +125,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
           </div>
         </div>
 
-        {/* Toggle controls (aligned right of images) */}
+        {/* Toggle controls and tumor size info */}
         <div className="toggle-controls">
           <div className="custom-toggle" style={{ marginBottom: '20px' }}>
             <label className="switch">
@@ -144,6 +153,18 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
             <span style={{ marginLeft: '12px' }}>
               {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
             </span>
+          </div>
+
+          {/* Tumor Sizes */}
+          <div style={{ marginTop: '30px' }}>
+            <h4 style={{ marginBottom: '10px' }}>Detected Tumor Sizes:</h4>
+            {boxes.length === 0 ? (
+              <p>No tumors detected.</p>
+            ) : (
+              getTumorSizes().map(({ id, width, height }) => (
+                <p key={id}>Tumor {id}: {width}px × {height}px</p>
+              ))
+            )}
           </div>
         </div>
       </div>
