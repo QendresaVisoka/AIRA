@@ -90,8 +90,9 @@ function AppContent({
             element={
               <div className="image-container">
                 {dicomData.imageUrl ? (
-                  <div>
+                  <div style={{ marginTop: '30px' }}>
                     <h3>{dicomData.fileName}</h3>
+
                     <img src={dicomData.imageUrl} alt="DICOM" />
                     <br />
                     <button className="top-left-button" onClick={() => navigate('/')}>

@@ -4,14 +4,14 @@ import { useNavigate } from 'react-router-dom';
 const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
   const navigate = useNavigate();
 
-  const [showBoxes, setShowBoxes] = useState(true);   // Bounding boxes visibility
-  const [showHeatmap, setShowHeatmap] = useState(true); // Default heatmap is visible
+  const [showBoxes, setShowBoxes] = useState(true);
+  const [showHeatmap, setShowHeatmap] = useState(true);
   const [boxes, setBoxes] = useState([]);
-  const [overlayImage, setOverlayImage] = useState(null);  // State to store the overlay image
+  const [overlayImage, setOverlayImage] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const canvasRef = useRef(null);
 
-  // Fetch bounding boxes (only once)
+  // Fetch bounding boxes
   useEffect(() => {
     const fetchBoundingBoxes = async () => {
       try {
@@ -25,15 +25,15 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     fetchBoundingBoxes();
   }, []);
 
-  // Fetch overlay image from the server (created with heatmap overlay)
+  // Fetch overlay image
   useEffect(() => {
     const fetchOverlayImage = async () => {
       try {
-        const res = await fetch('http://localhost:5000/get-overlay?' + new Date().getTime()); // Cache busting
+        const res = await fetch('http://localhost:5000/get-overlay?' + new Date().getTime());
         if (res.ok) {
           const blob = await res.blob();
           const overlayImageUrl = URL.createObjectURL(blob);
-          setOverlayImage(overlayImageUrl);  // Set the overlay image URL from the response
+          setOverlayImage(overlayImageUrl);
         } else {
           alert('No overlay image found');
         }
@@ -42,21 +42,18 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
       }
     };
     fetchOverlayImage();
-  }, []); // Only fetch overlay once on mount
+  }, []);
 
-  // Draw bounding boxes when toggled or image loads
+  // Draw bounding boxes
   const drawBoxes = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !imageLoaded) return;
+    const img = document.getElementById('analyzed-image');
+
+    if (!canvas || !img || !imageLoaded) return;
 
     const ctx = canvas.getContext('2d');
-    const img = document.getElementById('analyzed-image');
-    if (!img) return;
-
-    // Set canvas size to match image
     canvas.width = img.clientWidth;
     canvas.height = img.clientHeight;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (showBoxes && boxes.length > 0) {
@@ -78,90 +75,87 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
 
   useEffect(() => {
     drawBoxes();
-  }, [drawBoxes]);  // Re-run drawing if bounding boxes change
+  }, [drawBoxes]);
 
   return (
     <div className="image-container">
       <h3>{fileName}</h3>
 
-      <div
-        className="image-pair"
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '20px',
-          justifyContent: 'center',
-          alignItems: 'flex-start',
-        }}
-      >
-        {/* Original Image on the Left */}
-        <div style={{ maxWidth: '48%' }}>
-          <img
-            src={originalImage}
-            alt="Original"
-            className="img-original"
-            style={{ width: '100%', display: 'block' }}
-          />
+      {/* Flex row: images + toggles */}
+      <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+        {/* Image pair */}
+        <div className="image-pair">
+          <div style={{ maxWidth: '48%' }}>
+            <img
+              src={originalImage}
+              alt="Original"
+              className="img-original"
+              style={{ width: '100%', display: 'block' }}
+            />
+          </div>
+
+          <div style={{ position: 'relative', maxWidth: '48%' }}>
+            <img
+              id="analyzed-image"
+              src={showHeatmap && overlayImage ? overlayImage : maskImage}
+              alt="Analyzed"
+              onLoad={() => setImageLoaded(true)}
+              style={{ width: '100%', display: 'block' }}
+            />
+            <canvas
+              ref={canvasRef}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                pointerEvents: 'none',
+                width: '100%',
+                height: '100%',
+              }}
+            />
+          </div>
         </div>
 
-        {/* Analyzed Image with Canvas Overlay on the Right */}
-        <div style={{ position: 'relative', maxWidth: '48%' }}>
-          {/* Display overlay image when heatmap toggle is on */}
-          <img
-            id="analyzed-image"
-            src={showHeatmap && overlayImage ? overlayImage : maskImage} // Use overlayImage when heatmap is visible
-            alt="Analyzed"
-            onLoad={() => setImageLoaded(true)}
-            style={{ width: '100%', display: 'block' }}
-          />
-          <canvas
-            ref={canvasRef}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              pointerEvents: 'none',
-              width: '100%',
-              height: '100%',
-            }}
-          />
+        {/* Toggle controls (aligned right of images) */}
+        <div className="toggle-controls">
+          <div className="custom-toggle" style={{ marginBottom: '20px' }}>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={showBoxes}
+                onChange={() => setShowBoxes(prev => !prev)}
+              />
+              <span className="slider"></span>
+            </label>
+            <span style={{ marginLeft: '12px' }}>
+              {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
+            </span>
+          </div>
+
+          <div className="custom-toggle">
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={showHeatmap}
+                onChange={() => setShowHeatmap(prev => !prev)}
+              />
+              <span className="slider"></span>
+            </label>
+            <span style={{ marginLeft: '12px' }}>
+              {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
+            </span>
+          </div>
         </div>
       </div>
 
+      {/* Buttons */}
       <div style={{ marginTop: '30px' }}>
         <button className="top-left-button" onClick={() => navigate('/image')}>
           Back
         </button>
-        <button className="button" onClick={() => navigate('/')}>
+        <button className="bottom-right-button" onClick={() => navigate('/')}>
           Upload New File
         </button>
-        <div className="custom-toggle" style={{ marginTop: '20px' }}>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={showBoxes}
-              onChange={() => setShowBoxes(prev => !prev)}
-            />
-            <span className="slider"></span>
-          </label>
-          <span style={{ marginLeft: '12px' }}>
-            {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
-          </span>
-        </div>
-
-        <div className="custom-toggle" style={{ marginTop: '20px' }}>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={showHeatmap}
-              onChange={() => setShowHeatmap(prev => !prev)}  // Toggle heatmap visibility
-            />
-            <span className="slider"></span>
-          </label>
-          <span style={{ marginLeft: '12px' }}>
-            {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
-          </span>
-        </div>
       </div>
     </div>
   );
