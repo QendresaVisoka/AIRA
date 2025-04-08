@@ -12,6 +12,8 @@ import time
 from scipy.ndimage import label
 import base64
 from flask import send_from_directory
+import base64
+import json
 
 
 app = Flask(__name__)
@@ -88,18 +90,37 @@ def upload_dicom():
             dicom_data = pydicom.dcmread(file_path)
             pixel_data = dicom_data.pixel_array
 
+            # Normalize to uint8 if needed
             if pixel_data.dtype != np.uint8:
                 pixel_data = np.uint8((pixel_data - np.min(pixel_data)) / (np.max(pixel_data) - np.min(pixel_data)) * 255)
 
+            # Convert image to PNG and then base64
             image = Image.fromarray(pixel_data)
             img_io = io.BytesIO()
             image.save(img_io, 'PNG')
             img_io.seek(0)
-            return send_file(img_io, mimetype='image/png')
+            img_base64 = base64.b64encode(img_io.getvalue()).decode('utf-8')
+
+            # Extract metadata
+            patient_id = str(dicom_data.get("PatientID", "Unknown"))
+            patient_sex = str(dicom_data.get("PatientSex", "Unknown"))
+            patient_age = str(dicom_data.get("PatientAge", "Unknown"))
+
+            return jsonify({
+                'image': f"data:image/png;base64,{img_base64}",
+                'patient': {
+                    'id': patient_id,
+                    'sex': patient_sex,
+                    'age': patient_age
+                }
+            })
+
         except Exception as e:
             return jsonify({'error': f'Error processing DICOM file: {str(e)}'}), 500
+
     else:
         return jsonify({'error': 'Invalid file type, only DICOM (.dcm) files are allowed'}), 400
+
 
 @app.route('/preprocess-dicom', methods=['POST'])
 def preprocess_dicom():
@@ -130,10 +151,6 @@ def preprocess_dicom():
         return jsonify({'error': f'Error processing DICOM file: {str(e)}'}), 500
     
 
-
-import base64
-
-import json
 
 @app.route('/predict-mask', methods=['POST'])
 def predict_mask():

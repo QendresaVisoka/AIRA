@@ -33,39 +33,36 @@ const UploadDICOM = ({ setDicomData }) => {
       setError('Please select a file to upload.');
       return;
     }
-
+  
     const formData = new FormData();
     formData.append('dicomFile', file);
-
+  
     try {
       const response = await fetch('http://localhost:5000/upload-dicom', {
         method: 'POST',
         body: formData,
       });
-
+  
       if (!response.ok) {
         const result = await response.json();
         setError(result.error || 'Unknown error occurred.');
         return;
       }
-
-      const imageBlob = await response.blob();
-
-      // Convert blob to base64 using FileReader
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result;
-        setDicomData({
-          imageUrl: base64,   // base64 string (data:image/png;base64,...)
-          fileName: fileName,
-        });
-        navigate('/image');
-      };
-      reader.readAsDataURL(imageBlob); // <-- this does the magic
+  
+      const data = await response.json(); // ✅ Parse JSON (not blob anymore)
+  
+      setDicomData({
+        imageUrl: data.image,          // base64 image string
+        fileName: fileName,
+        patientInfo: data.patient      // contains id, sex, age
+      });
+  
+      navigate('/image');
     } catch (err) {
       setError('Error uploading file: ' + err.message);
     }
   };
+  
 
   return (
     <div className="upload-dicom">

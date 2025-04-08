@@ -344,3 +344,33 @@ input:checked + .slider:before {
     box-shadow: -24px 0 #FFF, 24px 0 #f143c0;
   }
 }
+.image-and-info-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 60px;
+  margin-top: 30px;
+}
+
+.centered-image-box {
+  display: flex;
+  justify-content: center;
+  flex-grow: 0;
+}
+
+.centered-image-box img {
+  max-width: 500px;
+  width: 100%;
+  border-radius: 10px;
+  display: block;
+}
+
+.patient-info-box {
+  background-color: #444;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 280px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  text-align: left;
+  flex-shrink: 0;
+}

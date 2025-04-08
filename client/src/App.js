@@ -5,7 +5,7 @@ import UploadDICOM from './Components/UploadDICOM';
 import AnalyzedImage from './Components/AnalyzedImage';
 
 function App() {
-  const [dicomData, setDicomData] = useState({ imageUrl: null, fileName: null });
+  const [dicomData, setDicomData] = useState({ imageUrl: null, fileName: null, patientInfo: null });
   const [preprocessedImage, setPreprocessedImage] = useState(null);
   const [maskImage, setMaskImage] = useState(null);
 
@@ -26,6 +26,7 @@ function App() {
 function AppContent({
   dicomData,
   setDicomData,
+  preprocessedImage,
   setPreprocessedImage,
   maskImage,
   setMaskImage,
@@ -41,7 +42,6 @@ function AppContent({
       });
 
       if (!preResponse.ok) throw new Error('Preprocessing failed');
-
       const preBlob = await preResponse.blob();
       const preUrl = URL.createObjectURL(preBlob);
       setPreprocessedImage(preUrl);
@@ -51,7 +51,6 @@ function AppContent({
       });
 
       if (!predResponse.ok) throw new Error('Prediction failed');
-
       const predBlob = await predResponse.blob();
       const predUrl = URL.createObjectURL(predBlob);
       setMaskImage(predUrl);
@@ -90,25 +89,38 @@ function AppContent({
             element={
               <div className="image-container">
                 {dicomData.imageUrl ? (
-                  <div style={{ marginTop: '30px' }}>
-                    <h3>{dicomData.fileName}</h3>
-
-                    <img src={dicomData.imageUrl} alt="DICOM" />
-                    <br />
-                    <button className="top-left-button" onClick={() => navigate('/')}>
-                      Back
-                    </button>
+                  <div className="image-display">
+                  <h3>{dicomData.fileName}</h3>
+                
+                  <div className="image-and-info-row">
+                    {/* Image in the center */}
+                    <div className="centered-image-box">
+                      <img src={dicomData.imageUrl} alt="DICOM" />
+                    </div>
+                
+                    {/* Patient info on the right */}
+                    <div className="patient-info-box">
+                      <h4>Patient Info</h4>
+                      <p><strong>ID:</strong> {dicomData.patientInfo?.id || 'N/A'}</p>
+                      <p><strong>Sex:</strong> {dicomData.patientInfo?.sex || 'N/A'}</p>
+                      <p><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
+                    </div>
+                  </div>
+                
+                  {/* Analyze + Back Buttons */}
+                  <div className="button-bar">
+                    <button className="top-left-button" onClick={() => navigate('/')}>Back</button>
                     {loading ? (
                       <div className="loading-container">
                         <span className="loader"></span>
                         <p>Analyzing</p>
                       </div>
                     ) : (
-                      <button className="button" onClick={handleAnalyze}>
-                        Analyze
-                      </button>
+                      <button className="button" onClick={handleAnalyze}>Analyze</button>
                     )}
                   </div>
+                </div>
+                
                 ) : (
                   <p>No image uploaded.</p>
                 )}
