@@ -140,13 +140,13 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
 
           {/* Tumor Sizes */}
           <div className="tumor-sizes">
-            <h4 style={{ marginBottom: '10px' }}>Detected Tumor Sizes:</h4>
+            <h4 style={{ marginBottom: '5px' }}>Detected Tumor Sizes:</h4>
             {boxes.length === 0 ? (
               <p>No tumors detected.</p>
             ) : (
               getTumorSizes().map(({ id, widthPx, heightPx, widthMM, heightMM }) => (
                 <div key={id}>
-                  <h5> Tumor {id}:</h5>
+                  <h5><strong> Tumor {id}:</strong></h5>
                   <p>
                     {widthPx}px × {heightPx}px
                     <br/>

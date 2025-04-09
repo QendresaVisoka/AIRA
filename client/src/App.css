@@ -365,6 +365,7 @@ input:checked + .slider:before {
 .toggle-tumor-controls {
   display: flex;
   flex-direction: column;
+  align-items: flex-start
   
 }
 
@@ -376,6 +377,7 @@ input:checked + .slider:before {
   padding-top: 20px;
   min-width: 300px;
   max-width: 300px;
+  margin-top: 250px;
 }
 
 .tumor-sizes {
