@@ -136,34 +136,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
         </div>
 
         {/* Toggle controls and tumor size info */}
-        <div className="toggle-controls">
-          <div className="custom-toggle" style={{ marginBottom: '20px' }}>
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={showBoxes}
-                onChange={() => setShowBoxes(prev => !prev)}
-              />
-              <span className="slider"></span>
-            </label>
-            <span style={{ marginLeft: '12px' }}>
-              {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
-            </span>
-          </div>
-
-          <div className="custom-toggle">
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={showHeatmap}
-                onChange={() => setShowHeatmap(prev => !prev)}
-              />
-              <span className="slider"></span>
-            </label>
-            <span style={{ marginLeft: '12px' }}>
-              {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
-            </span>
-          </div>
+        <div className="toggle-tumor-controls">
 
           {/* Tumor Sizes */}
           <div className="tumor-sizes">
@@ -183,16 +156,47 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
               ))
             )}
           </div>
+
+          <div className="toggles-container">
+            <div className="custom-toggle" style={{ marginBottom: '20px' }}>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={showBoxes}
+                  onChange={() => setShowBoxes(prev => !prev)}
+                />
+                <span className="slider"></span>
+              </label>
+              <span style={{ marginLeft: '12px' }}>
+                {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
+              </span>
+            </div>
+
+            <div className="custom-toggle">
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={showHeatmap}
+                  onChange={() => setShowHeatmap(prev => !prev)}
+                />
+                <span className="slider"></span>
+              </label>
+              <span style={{ marginLeft: '12px' }}>
+                {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
+              </span>
+            </div>
+          </div>
+
+          <button className="bottom-right-button" onClick={() => navigate('/')}>
+            Upload New File
+          </button>
+
         </div>
       </div>
 
-      {/* Buttons */}
       <div style={{ marginTop: '30px' }}>
         <button className="top-left-button" onClick={() => navigate('/image')}>
           Back
-        </button>
-        <button className="bottom-right-button" onClick={() => navigate('/')}>
-          Upload New File
         </button>
       </div>
     </div>
