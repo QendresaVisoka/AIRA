@@ -166,7 +166,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
           </div>
 
           {/* Tumor Sizes */}
-          <div style={{ marginTop: '30px' }}>
+          <div className="tumor-sizes">
             <h4 style={{ marginBottom: '10px' }}>Detected Tumor Sizes:</h4>
             {boxes.length === 0 ? (
               <p>No tumors detected.</p>
