@@ -94,16 +94,16 @@ function AppContent({
                 
                   <div className="image-and-info-row">
                     {/* Image in the center */}
-                    <div className="centered-image-box">
+                    <div>
                       <img src={dicomData.imageUrl} alt="DICOM" />
                     </div>
                 
                     {/* Patient info on the right */}
                     <div className="patient-info-box">
-                      <h4>Patient Info</h4>
-                      <p><strong>ID:</strong> {dicomData.patientInfo?.id || 'N/A'}</p>
-                      <p><strong>Sex:</strong> {dicomData.patientInfo?.sex || 'N/A'}</p>
-                      <p><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
+                      <h4><strong>Patient Info:</strong></h4>
+                      <p style={{margin: "2px"}}><strong>ID:</strong> {dicomData.patientInfo?.id || 'N/A'}</p>
+                      <p style={{margin: "2px"}}><strong>Sex:</strong> {dicomData.patientInfo?.sex || 'N/A'}</p>
+                      <p style={{margin: "2px"}}><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
                     </div>
                   </div>
                 
