@@ -8,6 +8,7 @@ const UploadDICOM = ({ setDicomData }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const fileInputRef = useRef();
+  const [loading, setLoading] = useState(false);
 
   const onDrop = (acceptedFiles) => {
     const uploadedFile = acceptedFiles[0];
@@ -29,6 +30,7 @@ const UploadDICOM = ({ setDicomData }) => {
   });
 
   const handleUpload = async () => {
+    setLoading(true);
     if (!file) {
       setError('Please select a file to upload.');
       return;
@@ -49,7 +51,7 @@ const UploadDICOM = ({ setDicomData }) => {
         return;
       }
   
-      const data = await response.json(); // ✅ Parse JSON (not blob anymore)
+      const data = await response.json(); 
   
       setDicomData({
         imageUrl: data.image,          // base64 image string
@@ -60,6 +62,8 @@ const UploadDICOM = ({ setDicomData }) => {
       navigate('/image');
     } catch (err) {
       setError('Error uploading file: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -101,9 +105,16 @@ const UploadDICOM = ({ setDicomData }) => {
       <p className="file-name">{fileName}</p>
       {error && <p className="error-text">{error}</p>}
 
-      <button className="upload-button" onClick={handleUpload}>
-        Upload DICOM
-      </button>
+      <div>
+        {loading ? (
+          <div className="loading-container">
+            <span className="loader" style={{paddingTop: "5px"}}></span>
+              <p style={{paddingTop: "5px"}}>Uploading</p>
+          </div>
+          ) : (
+            <button className="upload-button" onClick={handleUpload}>Upload DICOM</button>
+          )}
+      </div>
     </div>
   );
 };

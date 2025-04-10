@@ -101,14 +101,16 @@ function AppContent({
                     {/* Patient info on the right */}
                     <div className="patient-info-box">
                       <h4><strong>Patient Info:</strong></h4>
-                      <p style={{margin: "2px"}}><strong>ID:</strong> {dicomData.patientInfo?.id || 'N/A'}</p>
-                      <p style={{margin: "2px"}}><strong>Sex:</strong> {dicomData.patientInfo?.sex || 'N/A'}</p>
-                      <p style={{margin: "2px"}}><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
+                      <div style={{textAlign: "left"}}>
+                        <p style={{margin: "5px"}}><strong>ID:</strong> {dicomData.patientInfo?.id || 'N/A'}</p>
+                        <p style={{margin: "5px"}}><strong>Sex:</strong> {dicomData.patientInfo?.sex || 'N/A'}</p>
+                        <p style={{margin: "5px"}}><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
+                      </div>
                     </div>
                   </div>
                 
                   {/* Analyze + Back Buttons */}
-                  <div className="button-bar">
+                  <div>
                     <button className="top-left-button" onClick={() => navigate('/')}>Back</button>
                     {loading ? (
                       <div className="loading-container">
