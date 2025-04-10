@@ -1,5 +1,5 @@
 from tensorflow.keras.models import load_model
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, make_response
 from flask_cors import CORS
 import pydicom
 import logging
@@ -175,7 +175,7 @@ def predict_mask():
 
         # Predict mask
         pred_mask = predict_full_mask_from_patches(model, preprocessed_image)
-        pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255
+        pred_mask = (pred_mask).astype(np.uint8) * 255
 
         # Postprocess
         processed, padding, bbox, cropped_shape = preprocess_image(pixel_data)
@@ -209,7 +209,7 @@ def predict_mask():
         original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
         heatmap = cv2.GaussianBlur(heatmap, (17, 17), 20)
         heatmap[~transparency_mask] = 0
-        overlay = cv2.addWeighted(original_image, 1, heatmap, 0.4, 0)
+        overlay = cv2.addWeighted(original_image, 1, heatmap, 1, 0)
         cv2.imwrite(os.path.join(PREDICTIONS_FOLDER, 'overlay.png'), overlay)
 
         img_io = io.BytesIO()
@@ -246,6 +246,60 @@ def get_overlay():
         return send_from_directory(PREDICTIONS_FOLDER, 'overlay.png')
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/get-heatmap-legend', methods=['GET'])
+def get_heatmap_legend():
+    import numpy as np
+    import cv2
+    from flask import make_response, request
+
+    width = request.args.get('width', default=120, type=int)   # total legend width
+    height = request.args.get('height', default=20, type=int)  # thinner height
+    label_area_height = 20  # for labels below the bar
+
+    # Create a horizontal gradient from 255 (left) to 0 (right)
+    gradient = np.linspace(0, 255, num=width, dtype=np.uint8)
+    gradient = np.repeat(gradient[np.newaxis, :], height, axis=0)
+
+    # Apply colormap and alpha
+    heatmap = cv2.applyColorMap(gradient, cv2.COLORMAP_JET)
+    alpha = np.full((height, width), int(255 * 0.8), dtype=np.uint8)
+    heatmap = np.dstack((heatmap, alpha))  # shape (H, W, 4)
+
+    # Create canvas with room for labels below
+    total_height = height + label_area_height
+    canvas = np.zeros((total_height, width, 4), dtype=np.uint8)
+
+    # Paste heatmap on top part
+    canvas[:height, :] = heatmap
+
+    # Labels and X positions (left, center, right)
+    label_values = [0.00, 0.50, 1.00]
+    label_positions = [0, width // 2 - 10, width - 25]
+
+    for value, x in zip(label_values, label_positions):
+        cv2.putText(
+            canvas,
+            f'{value:.2f}',
+            (x, height + 15),  # positioned under the heatmap
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (255, 255, 255, 255),  # white
+            1,
+            cv2.LINE_AA
+        )
+
+    # Encode image
+    _, buffer = cv2.imencode('.png', canvas)
+    response = make_response(buffer.tobytes())
+    response.headers['Content-Type'] = 'image/png'
+    return response
+
+
+
+
 
 
 

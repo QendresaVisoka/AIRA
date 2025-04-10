@@ -11,6 +11,8 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const canvasRef = useRef(null);
   const [pixelSpacing, setPixelSpacing] = useState([1.0, 1.0]);
+  const [legendUrl, setLegendUrl] = useState(null);
+
 
   // Fetch bounding boxes
   useEffect(() => {
@@ -46,6 +48,23 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     fetchOverlayImage();
   }, []);
 
+
+  // Fetch Heatmap Legend
+  useEffect(() => {
+    const fetchLegend = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/get-heatmap-legend');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        setLegendUrl(url); // <- store in state
+      } catch (err) {
+        console.error('Failed to load heatmap legend:', err);
+      }
+    };
+  
+    fetchLegend();
+  }, []);
+  
   // Draw bounding boxes
   const drawBoxes = useCallback(() => {
     const canvas = canvasRef.current;
@@ -155,6 +174,10 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
                 </div>
               ))
             )}
+          </div>
+
+          <div className="heatmap-legend">
+            {legendUrl && <img src={legendUrl} alt="Heatmap Legend" />}
           </div>
 
             <div className="toggles-container">
