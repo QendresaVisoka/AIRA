@@ -167,7 +167,7 @@ button:disabled {
 
 
 .image-container {
-  width: 90%; /*wenn fit-content dann nur so gross wie bilder im container, besser für screen-split*/
+  width: 70%; /*wenn fit-content dann nur so gross wie bilder im container, besser für screen-split*/
   max-width: 100%;
   max-height: fit-content;    
   background-color: #333;

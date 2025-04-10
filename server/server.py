@@ -248,34 +248,44 @@ def get_overlay():
         return jsonify({'error': str(e)}), 500
 
 
-
 @app.route('/get-heatmap-legend', methods=['GET'])
 def get_heatmap_legend():
-    import numpy as np
-    import cv2
-    from flask import make_response, request
+    width = request.args.get('width', default=120, type=int)   # Total legend width
+    height = request.args.get('height', default=20, type=int)  # Height of the bar
+    label_area_height = 20  # Space for labels below the heatmap
 
-    width = request.args.get('width', default=120, type=int)   # total legend width
-    height = request.args.get('height', default=20, type=int)  # thinner height
-    label_area_height = 20  # for labels below the bar
-
-    # Create a horizontal gradient from 255 (left) to 0 (right)
+    # Create horizontal gradient: Blue (low) → Red (high)
     gradient = np.linspace(0, 255, num=width, dtype=np.uint8)
     gradient = np.repeat(gradient[np.newaxis, :], height, axis=0)
 
-    # Apply colormap and alpha
+    # Apply JET colormap and alpha
     heatmap = cv2.applyColorMap(gradient, cv2.COLORMAP_JET)
-    alpha = np.full((height, width), int(255 * 0.8), dtype=np.uint8)
-    heatmap = np.dstack((heatmap, alpha))  # shape (H, W, 4)
+    alpha_channel = np.full((height, width), int(255 * 0.5), dtype=np.uint8)
+    heatmap = np.dstack((heatmap, alpha_channel))  # shape: (H, W, 4)
 
-    # Create canvas with room for labels below
+    # === BLEND HEATMAP ON LIGHT GREY BACKGROUND ===
+    # Create background (light grey)
+    background = np.full((height, width, 3), 170, dtype=np.uint8)
+
+    # Extract alpha mask and normalize
+    alpha = heatmap[:, :, 3] / 255.0
+    alpha = np.expand_dims(alpha, axis=2)
+
+    # Foreground (heatmap color only)
+    heatmap_rgb = heatmap[:, :, :3]
+
+    # Alpha blending
+    blended = (alpha * heatmap_rgb + (1 - alpha) * background).astype(np.uint8)
+
+    # === CREATE CANVAS WITH SPACE FOR LABELS ===
     total_height = height + label_area_height
     canvas = np.zeros((total_height, width, 4), dtype=np.uint8)
 
-    # Paste heatmap on top part
-    canvas[:height, :] = heatmap
+    # Place blended heatmap onto canvas
+    canvas[:height, :, :3] = blended
+    canvas[:height, :, 3] = 255  # Set alpha fully opaque
 
-    # Labels and X positions (left, center, right)
+    # === ADD TEXT LABELS BELOW ===
     label_values = [0.00, 0.50, 1.00]
     label_positions = [0, width // 2 - 10, width - 25]
 
@@ -283,15 +293,15 @@ def get_heatmap_legend():
         cv2.putText(
             canvas,
             f'{value:.2f}',
-            (x, height + 15),  # positioned under the heatmap
+            (x, height + 15),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.4,
-            (255, 255, 255, 255),  # white
+            (255, 255, 255, 255),  # White
             1,
             cv2.LINE_AA
         )
 
-    # Encode image
+    # === ENCODE AND SEND PNG ===
     _, buffer = cv2.imencode('.png', canvas)
     response = make_response(buffer.tobytes())
     response.headers['Content-Type'] = 'image/png'
