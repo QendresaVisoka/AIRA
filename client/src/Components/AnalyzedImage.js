@@ -157,8 +157,6 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
             )}
           </div>
 
-          <div className="toggles-button-container">
-
             <div className="toggles-container">
               <div className="custom-toggle" style={{ marginBottom: '20px' }}>
                 <label className="switch">
@@ -188,13 +186,6 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
                 </span>
               </div>
             </div>
-          
-
-            <button className="bottom-right-button" onClick={() => navigate('/')}>
-              Upload New File
-            </button>
-
-          </div>
 
         </div>
       </div>
@@ -204,6 +195,9 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
           Back
         </button>
       </div>
+      <button className="bottom-right-button" onClick={() => navigate('/')}>
+              Upload New File
+      </button>
     </div>
   );
 };
