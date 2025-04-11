@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import LoginPage from './Components/LoginPage';
 import UploadDICOM from './Components/UploadDICOM';
 import AnalyzedImage from './Components/AnalyzedImage';
 
@@ -89,8 +90,15 @@ function AppContent({
 
       <div className="main-content">
         <Routes>
+          <Route 
+            path="/" 
+            element={
+              <LoginPage />
+            } 
+          />
+
           <Route
-            path="/"
+            path="/upload"
             element={
               <UploadDICOM
                 setDicomData={setDicomData}

@@ -212,7 +212,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound }) => {
           Back
         </button>
       </div>
-      <button className="bottom-right-button" onClick={() => navigate('/')}>
+      <button className="bottom-right-button" onClick={() => navigate('/upload')}>
         Upload New File
       </button>
     </div>

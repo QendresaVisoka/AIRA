@@ -452,4 +452,37 @@ input:checked + .slider:before {
 }
 
 
+.login-container {
+  max-width: 400px;
+  margin: 100px auto;
+  padding: 30px;
+  background: #2f2f2f;
+  border-radius: 10px;
+  color: white;
+  text-align: center;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: none;
+}
+
+.login-form button {
+  padding: 10px 20px;
+  background-color: #f143c0;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.error-message {
+  color: #ff6565;
+  font-size: 14px;
+}
+
+
 
