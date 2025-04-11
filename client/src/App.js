@@ -68,7 +68,7 @@ function AppContent({
       <header className="App-header">
         <div className="header-left">
           <img src="/logo.png" alt="Logo" className="logo" />
-          <h1 className="site-title">MammoCheck - Breast Cancer Detection</h1>
+          <h1 className="site-title">AIRA – AI Radiology Assistant for Mammography</h1>
         </div>
       </header>
 

@@ -265,7 +265,7 @@ def get_heatmap_legend():
 
     # === BLEND HEATMAP ON LIGHT GREY BACKGROUND ===
     # Create background (light grey)
-    background = np.full((height, width, 3), 170, dtype=np.uint8)
+    background = np.full((height, width, 3), 220, dtype=np.uint8)
 
     # Extract alpha mask and normalize
     alpha = heatmap[:, :, 3] / 255.0

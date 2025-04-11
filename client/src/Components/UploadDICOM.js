@@ -112,7 +112,13 @@ const UploadDICOM = ({ setDicomData }) => {
               <p style={{paddingTop: "5px"}}>Uploading</p>
           </div>
           ) : (
-            <button className="upload-button" onClick={handleUpload}>Upload DICOM</button>
+            <button
+              className={`upload-button ${!file || loading ? 'disabled' : ''}`}
+              onClick={handleUpload}
+              disabled={!file || loading}>
+              Upload DICOM
+            </button>
+
           )}
       </div>
     </div>

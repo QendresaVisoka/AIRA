@@ -151,6 +151,9 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
                 height: '100%',
               }}
             />
+            <div className="heatmap-legend">
+              {legendUrl && <img src={legendUrl} alt="Heatmap Legend" />}
+            </div>
           </div>
         </div>
 
@@ -174,10 +177,6 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
                 </div>
               ))
             )}
-          </div>
-
-          <div className="heatmap-legend">
-            {legendUrl && <img src={legendUrl} alt="Heatmap Legend" />}
           </div>
 
             <div className="toggles-container">
