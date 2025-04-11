@@ -7,22 +7,23 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
 
-    // Simple mock login (replace this with real API call)
     if (username === 'admin' && password === 'AIRA') {
       setError('');
       navigate('/upload');
     } else {
-      setError('Invalid credentials');
+      setError('Invalid credentials. Try "admin" / "AIRA"');
     }
   };
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
-      <form className="login-form" onSubmit={handleLogin}>
+    <div className="login-box">
+      <h2>Welcome to AIRA</h2>
+      <p className="subtitle">AI Radiology Assistant for Mammography</p>
+        <p className="description">Please login to continue</p>
+      <form onSubmit={handleLogin}>
         <input
           type="text"
           placeholder="Username"
@@ -41,7 +42,11 @@ const LoginPage = () => {
 
         {error && <p className="error-message">{error}</p>}
 
-        <button type="submit">Login</button>
+        <button type="submit" disabled={!username || !password}>
+            Login
+        </button>
+  
+
       </form>
     </div>
   );

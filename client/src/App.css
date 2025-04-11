@@ -167,7 +167,8 @@ button:hover {
 }
 
 button:disabled {
-  background-color: #d6d6d6;
+  opacity: 0.5;
+  pointer-events: none;
   cursor: not-allowed;
 }
 
@@ -451,38 +452,47 @@ input:checked + .slider:before {
   display: block;
 }
 
-
-.login-container {
-  max-width: 400px;
-  margin: 100px auto;
-  padding: 30px;
-  background: #2f2f2f;
-  border-radius: 10px;
-  color: white;
+.login-box {
+  background-color: #333;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   text-align: center;
-}
-
-.login-form input {
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 5px;
-  border: none;
+  max-width: 400px;
+  margin: 40px auto;
 }
 
-.login-form button {
-  padding: 10px 20px;
-  background-color: #f143c0;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+.login-box h2 {
+  color: #ffffff;
+  margin-bottom: 10px;
 }
+
+.subtitle {
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+
+.login-box form input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  background: #444;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+}
+
+.login-box form input:focus {
+  outline: 2px solid #f143c0;
+}
+
 
 .error-message {
-  color: #ff6565;
+  color: #ff6b6b;
   font-size: 14px;
+  margin-top: 10px;
 }
-
-
-
