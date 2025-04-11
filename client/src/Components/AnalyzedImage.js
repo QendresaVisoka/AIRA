@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
+const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound }) => {
   const navigate = useNavigate();
 
   const [showBoxes, setShowBoxes] = useState(true);
@@ -13,8 +13,6 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
   const [pixelSpacing, setPixelSpacing] = useState([1.0, 1.0]);
   const [legendUrl, setLegendUrl] = useState(null);
 
-
-  // Fetch bounding boxes
   useEffect(() => {
     const fetchBoundingBoxes = async () => {
       try {
@@ -29,7 +27,6 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     fetchBoundingBoxes();
   }, []);
 
-  // Fetch overlay image
   useEffect(() => {
     const fetchOverlayImage = async () => {
       try {
@@ -38,8 +35,6 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
           const blob = await res.blob();
           const overlayImageUrl = URL.createObjectURL(blob);
           setOverlayImage(overlayImageUrl);
-        } else {
-          alert('No overlay image found');
         }
       } catch (err) {
         alert('Failed to load overlay image: ' + err.message);
@@ -48,28 +43,23 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     fetchOverlayImage();
   }, []);
 
-
-  // Fetch Heatmap Legend
   useEffect(() => {
     const fetchLegend = async () => {
       try {
         const res = await fetch('http://localhost:5000/get-heatmap-legend');
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-        setLegendUrl(url); // <- store in state
+        setLegendUrl(url);
       } catch (err) {
         console.error('Failed to load heatmap legend:', err);
       }
     };
-  
     fetchLegend();
   }, []);
-  
-  // Draw bounding boxes
+
   const drawBoxes = useCallback(() => {
     const canvas = canvasRef.current;
     const img = document.getElementById('analyzed-image');
-
     if (!canvas || !img || !imageLoaded) return;
 
     const ctx = canvas.getContext('2d');
@@ -119,9 +109,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
     <div className="image-container">
       <h3>{fileName}</h3>
 
-      {/* Flex row: images + toggles */}
       <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
-        {/* Image pair */}
         <div className="image-pair">
           <div style={{ maxWidth: '48%' }}>
             <img
@@ -151,64 +139,71 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
                 height: '100%',
               }}
             />
-            <div className="heatmap-legend">
-              {legendUrl && <img src={legendUrl} alt="Heatmap Legend" />}
-            </div>
+            {legendUrl && (
+              <div className="heatmap-legend">
+                <img src={legendUrl} alt="Heatmap Legend" />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Toggle controls and tumor size info */}
         <div className="analyze-container">
-
-          {/* Tumor Sizes */}
-          <div className="tumor-sizes">
-            <h4 style={{ marginBottom: '5px' }}>Detected Tumor Sizes:</h4>
-            {boxes.length === 0 ? (
-              <p>No tumors detected.</p>
-            ) : (
-              getTumorSizes().map(({ id, widthPx, heightPx, widthMM, heightMM }) => (
-                <div key={id}>
-                  <h5><strong> Tumor {id}:</strong></h5>
-                  <p>
-                    {widthPx}px × {heightPx}px
-                    <br/>
-                    ({widthMM}mm × {heightMM}mm)
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-
-            <div className="toggles-container">
-              <div className="custom-toggle" style={{ marginBottom: '20px' }}>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={showBoxes}
-                    onChange={() => setShowBoxes(prev => !prev)}
-                  />
-                  <span className="slider"></span>
-                </label>
-                <span style={{ marginLeft: '12px' }}>
-                  {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
-                </span>
-              </div>
-
-              <div className="custom-toggle">
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={showHeatmap}
-                    onChange={() => setShowHeatmap(prev => !prev)}
-                  />
-                  <span className="slider"></span>
-                </label>
-                <span style={{ marginLeft: '12px' }}>
-                  {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
-                </span>
-              </div>
+          {tumorFound === false ? (
+            <div className="tumor-sizes">
+              <h4>No tumor detected.</h4>
+              <p>This image does not appear to contain a tumor.</p>
             </div>
+          ) : (
+            <>
+              <div className="tumor-sizes">
+                <h4 style={{ marginBottom: '5px' }}>Detected Tumor Sizes:</h4>
+                {boxes.length === 0 ? (
+                  <p>No tumors detected.</p>
+                ) : (
+                  getTumorSizes().map(({ id, widthPx, heightPx, widthMM, heightMM }) => (
+                    <div key={id}>
+                      <h5><strong> Tumor {id}:</strong></h5>
+                      <p>
+                        {widthPx}px × {heightPx}px
+                        <br />
+                        ({widthMM}mm × {heightMM}mm)
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
 
+              <div className="toggles-container">
+                <div className="custom-toggle" style={{ marginBottom: '20px' }}>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={showBoxes}
+                      onChange={() => setShowBoxes(prev => !prev)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                  <span style={{ marginLeft: '12px' }}>
+                    {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
+                  </span>
+                </div>
+
+                <div className="custom-toggle">
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={showHeatmap}
+                      onChange={() => setShowHeatmap(prev => !prev)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                  <span style={{ marginLeft: '12px' }}>
+                    {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -218,7 +213,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage }) => {
         </button>
       </div>
       <button className="bottom-right-button" onClick={() => navigate('/')}>
-              Upload New File
+        Upload New File
       </button>
     </div>
   );

@@ -215,11 +215,21 @@ def predict_mask():
         img_io = io.BytesIO()
         Image.fromarray(original_image).save(img_io, 'PNG')
         img_io.seek(0)
-        return send_file(img_io, mimetype='image/png')
 
+        response_data = {
+            'tumorFound': bool(np.sum(restored_mask) > 0)
+        }
+
+        # Include image as base64 to send along with the response (optional)
+        buffered = io.BytesIO()
+        Image.fromarray(original_image).save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        response_data['image'] = f"data:image/png;base64,{img_str}"
+        return jsonify(response_data)
     except Exception as e:
         print("Postprocessing Error:", e)
         return jsonify({'error': str(e)}), 500
+
 
 
 
