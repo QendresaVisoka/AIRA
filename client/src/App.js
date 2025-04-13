@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import './App.css';
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+  useLocation
+} from 'react-router-dom';
+
 import LoginPage from './Components/LoginPage';
 import UploadDICOM from './Components/UploadDICOM';
 import AnalyzedImage from './Components/AnalyzedImage';
+import WelcomePage from './Components/WelcomePage';
 
 function App() {
   const [dicomData, setDicomData] = useState({ imageUrl: null, fileName: null, patientInfo: null });
   const [preprocessedImage, setPreprocessedImage] = useState(null);
   const [maskImage, setMaskImage] = useState(null);
-  const [tumorFound, setTumorFound] = useState(null); // <- NEW
+  const [tumorFound, setTumorFound] = useState(null);
 
   return (
     <Router>
@@ -38,6 +46,7 @@ function AppContent({
   setTumorFound,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
 
   const handleAnalyze = async () => {
@@ -61,11 +70,12 @@ function AppContent({
       const result = await predResponse.json();
       setTumorFound(result.tumorFound ?? false);
 
-      // Get image from prediction if included
       if (result.image) {
         const base64Data = result.image.split(',')[1];
         const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length).fill().map((_, i) => byteCharacters.charCodeAt(i));
+        const byteNumbers = new Array(byteCharacters.length)
+          .fill()
+          .map((_, i) => byteCharacters.charCodeAt(i));
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: 'image/png' });
         setMaskImage(URL.createObjectURL(blob));
@@ -81,21 +91,21 @@ function AppContent({
 
   return (
     <div className="App">
-      <header className="App-header">
-        <div className="header-left">
-          <img src="/logo.png" alt="Logo" className="logo" />
-          <h1 className="site-title">AIRA – AI Radiology Assistant for Mammography</h1>
-        </div>
-      </header>
+      {/* ✅ Header shown only when not on /welcome */}
+      {location.pathname !== '/' && (
+        <header className="App-header">
+          <div className="header-left">
+            <img src="/logo.png" alt="Logo" className="logo" />
+            <h1 className="site-title">AIRA – AI Radiology Assistant for Mammography</h1>
+          </div>
+        </header>
+      )}
 
       <div className="main-content">
         <Routes>
-          <Route 
-            path="/" 
-            element={
-              <LoginPage />
-            } 
-          />
+          <Route path="/" element={<WelcomePage />} />
+
+          <Route path="/login" element={<LoginPage />} />
 
           <Route
             path="/upload"
@@ -131,7 +141,7 @@ function AppContent({
                     </div>
 
                     <div>
-                      <button className="top-left-button" onClick={() => navigate('/')}>Back</button>
+                      <button className="top-left-button" onClick={() => navigate('/upload')}>Back</button>
                       {loading ? (
                         <div className="loading-container">
                           <span className="loader"></span>
