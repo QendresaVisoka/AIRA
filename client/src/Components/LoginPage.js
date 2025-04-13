@@ -20,9 +20,7 @@ const LoginPage = () => {
 
   return (
     <div className="login-box">
-      <h2>Welcome to AIRA</h2>
-      <p className="subtitle">AI Radiology Assistant for Mammography</p>
-        <p className="description">Please login to continue</p>
+      <h2>Please login to continue</h2>
       <form onSubmit={handleLogin}>
         <input
           type="text"

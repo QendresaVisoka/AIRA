@@ -91,15 +91,21 @@ function AppContent({
 
   return (
     <div className="App">
-      {/* ✅ Header shown only when not on /welcome */}
-      {location.pathname !== '/' && (
         <header className="App-header">
           <div className="header-left">
             <img src="/logo.png" alt="Logo" className="logo" />
             <h1 className="site-title">AIRA – AI Radiology Assistant for Mammography</h1>
           </div>
+
+          {/* ✅ Show this only on the / route */}
+          {location.pathname === '/' && (
+            <button className="login-top-right" onClick={() => navigate('/login')}>
+              Login
+            </button>
+          )}
         </header>
-      )}
+
+      
 
       <div className="main-content">
         <Routes>

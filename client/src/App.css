@@ -1,11 +1,12 @@
 
 /* General Styles */
 body {
-  background-color: black; /* Dark grey background */
+  background-color: #141414; 
   color: white;
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 .App {
@@ -17,7 +18,7 @@ body {
 
 /* Header Section */
 .App-header {
-  background-color: #333;
+  background-color: rgb(24, 24, 24);
   color: rgb(249, 249, 249);
   width: 100%;
   display: flex;
@@ -140,7 +141,9 @@ body {
 }
 
 .upload-button:hover {
-  background-color: #970d70;
+  background-color: #ffeaf6;
+  color: #ff0084;
+  border: 1px solid #ff0084;
 }
 
 .upload-button.disabled {
@@ -163,7 +166,9 @@ button {
 }
 
 button:hover {
-  background-color: #970d70;
+  background-color: #ffeaf6;
+  color: #ff0084;
+  border: 1px solid #ff0084;
 }
 
 button:disabled {
@@ -211,7 +216,9 @@ button:disabled {
 
 
 .top-left-button:hover {
-  background-color: #970d70;
+  background-color: #ffeaf6;
+  color: #ff0084;
+  border: 1px solid #ff0084;
 }
 
 
@@ -499,7 +506,7 @@ input:checked + .slider:before {
 
 
 .fullscreen-image {
-  background-image: url('/public/WelcomePage.png'); /* Update with your actual path */
+  background-image: url('/public/WelcomePage.png'); 
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -509,20 +516,21 @@ input:checked + .slider:before {
 }
 
 .login-top-right {
-  position: absolute;
-  top: 20px;
-  right: 20px;
   transition: background-color 0.2s;
-  padding: 15px 30px;
+  padding: 10px 20px;
   background-color: #ff0084;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 24px;
-  margin-top: 20px;
+  font-size: 22px;
+  margin-left:1430px;
+  margin-top: -2px;
+  
 }
 
 .login-top-right:hover {
-  background-color: #ffffff;
+  background-color: #ffeaf6;
+  color: #ff0084;
+  border: 1px solid #ff0084;
 }
