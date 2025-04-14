@@ -342,25 +342,23 @@ input:checked + .slider:before {
   }
 }
 
-
 .image-and-info-row {
   display: grid;
-  grid-template-columns: 1fr auto 1fr; /* Three columns: equal space on the sides, auto for the image */
-  justify-content: center;
+  grid-template-columns: 1fr auto 1fr; /* left text, center image, right empty */
   align-items: start;
   gap: 2vw;
   margin-top: 20px;
 }
 
-.image-and-info-row > div:first-child {
-  grid-column: 2; /* Center the image in the second column */
+
+.image-wrapper {
+  grid-column: 2; /* Center column */
+  text-align: center; 
 }
 
 
 .patient-info-box {
-  grid-column: 3;
-  text-align: center;
-  align-items: center;
+  grid-column: 1;
   flex-shrink: 0;
   margin-top: 10px;
 }

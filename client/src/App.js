@@ -97,7 +97,7 @@ function AppContent({
             <h1 className="site-title">AIRA – AI Radiology Assistant for Mammography</h1>
           </div>
 
-          {/* ✅ Show this only on the / route */}
+        
           {location.pathname === '/' && (
             <button className="login-top-right" onClick={() => navigate('/login')}>
               Login
@@ -132,10 +132,6 @@ function AppContent({
                     <h3>{dicomData.fileName}</h3>
 
                     <div className="image-and-info-row">
-                      <div>
-                        <img src={dicomData.imageUrl} alt="DICOM" />
-                      </div>
-
                       <div className="patient-info-box">
                         <h4><strong>Patient Info:</strong></h4>
                         <div style={{ textAlign: "left" }}>
@@ -144,7 +140,12 @@ function AppContent({
                           <p><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
                         </div>
                       </div>
+
+                      <div className="image-wrapper">
+                        <img src={dicomData.imageUrl} alt="DICOM" />
+                      </div>
                     </div>
+
 
                     <div>
                       <button className="top-left-button" onClick={() => navigate('/upload')}>Back</button>
@@ -169,6 +170,7 @@ function AppContent({
             path="/analyzed-image"
             element={
               <AnalyzedImage
+                dicomData={dicomData}
                 fileName={dicomData.fileName}
                 originalImage={dicomData.imageUrl}
                 maskImage={maskImage}

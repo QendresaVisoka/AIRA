@@ -296,7 +296,7 @@ def get_heatmap_legend():
     canvas[:height, :, 3] = 255  # Set alpha fully opaque
 
     # === ADD TEXT LABELS BELOW ===
-    label_values = [0.00, 0.50, 1.00]
+    label_values = [0.0, 0.5, 1.0]
     label_positions = [0, width // 2 - 10, width - 25]
 
     for value, x in zip(label_values, label_positions):

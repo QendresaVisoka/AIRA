@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound }) => {
+const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound, dicomData }) => {
   const navigate = useNavigate();
 
   const [showBoxes, setShowBoxes] = useState(true);
@@ -109,101 +109,113 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound }) => {
     <div className="image-container">
       <h3>{fileName}</h3>
 
-      <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
-        <div className="image-pair">
-          <div style={{ maxWidth: '48%' }}>
-            <img
-              src={originalImage}
-              alt="Original"
-              className="img-original"
-              style={{ width: '100%', display: 'block' }}
-            />
-          </div>
-
-          <div style={{ position: 'relative', maxWidth: '48%' }}>
-            <img
-              id="analyzed-image"
-              src={showHeatmap && overlayImage ? overlayImage : maskImage}
-              alt="Analyzed"
-              onLoad={() => setImageLoaded(true)}
-              style={{ width: '100%', display: 'block' }}
-            />
-            <canvas
-              ref={canvasRef}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                pointerEvents: 'none',
-                width: '100%',
-                height: '100%',
-              }}
-            />
-            {legendUrl && (
-              <div className="heatmap-legend">
-                <img src={legendUrl} alt="Heatmap Legend" />
-              </div>
-            )}
+      <div className="image-content-wrapper" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+  
+        <div className="patient-info-box" >
+        <h4><strong>Patient Info:</strong></h4>
+          <div style={{ textAlign: "left" }}>
+            <p><strong>ID:</strong> {dicomData?.patientInfo?.id || 'N/A'}</p>
+            <p><strong>Sex:</strong> {dicomData?.patientInfo?.sex || 'N/A'}</p>
+            <p><strong>Age:</strong> {dicomData?.patientInfo?.age || 'N/A'}</p>
           </div>
         </div>
 
-        <div className="analyze-container">
-          {tumorFound === false ? (
-            <div className="tumor-sizes">
-              <h4>No tumor detected.</h4>
-              <p>This image does not appear to contain a tumor.</p>
+        <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+          <div className="image-pair">
+            <div style={{ maxWidth: '48%' }}>
+              <img
+                src={originalImage}
+                alt="Original"
+                className="img-original"
+                style={{ width: '100%', display: 'block' }}
+              />
             </div>
-          ) : (
-            <>
+
+            <div style={{ position: 'relative', maxWidth: '48%' }}>
+              <img
+                id="analyzed-image"
+                src={showHeatmap && overlayImage ? overlayImage : maskImage}
+                alt="Analyzed"
+                onLoad={() => setImageLoaded(true)}
+                style={{ width: '100%', display: 'block' }}
+              />
+              <canvas
+                ref={canvasRef}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  pointerEvents: 'none',
+                  width: '100%',
+                  height: '100%',
+                }}
+              />
+              {legendUrl && (
+                <div className="heatmap-legend">
+                  <img src={legendUrl} alt="Heatmap Legend" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="analyze-container">
+            {tumorFound === false ? (
               <div className="tumor-sizes">
-                <h4 style={{ marginBottom: '5px' }}>Detected Tumor Sizes:</h4>
-                {boxes.length === 0 ? (
-                  <p>No tumors detected.</p>
-                ) : (
-                  getTumorSizes().map(({ id, widthPx, heightPx, widthMM, heightMM }) => (
-                    <div key={id}>
-                      <h5><strong> Tumor {id}:</strong></h5>
-                      <p>
-                        {widthPx}px × {heightPx}px
-                        <br />
-                        ({widthMM}mm × {heightMM}mm)
-                      </p>
-                    </div>
-                  ))
-                )}
+                <h4>No tumor detected.</h4>
+                <p>This image does not appear to contain a tumor.</p>
               </div>
-
-              <div className="toggles-container">
-                <div className="custom-toggle" style={{ marginBottom: '20px' }}>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={showBoxes}
-                      onChange={() => setShowBoxes(prev => !prev)}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                  <span style={{ marginLeft: '12px' }}>
-                    {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
-                  </span>
+            ) : (
+              <>
+                <div className="tumor-sizes">
+                  <h4 style={{ marginBottom: '5px' }}>Detected Tumor Sizes:</h4>
+                  {boxes.length === 0 ? (
+                    <p>No tumors detected.</p>
+                  ) : (
+                    getTumorSizes().map(({ id, widthPx, heightPx, widthMM, heightMM }) => (
+                      <div key={id}>
+                        <h5><strong> Tumor {id}:</strong></h5>
+                        <p>
+                          {widthPx}px × {heightPx}px
+                          <br />
+                          ({widthMM}mm × {heightMM}mm)
+                        </p>
+                      </div>
+                    ))
+                  )}
                 </div>
 
-                <div className="custom-toggle">
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={showHeatmap}
-                      onChange={() => setShowHeatmap(prev => !prev)}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                  <span style={{ marginLeft: '12px' }}>
-                    {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
-                  </span>
+                <div className="toggles-container">
+                  <div className="custom-toggle" style={{ marginBottom: '20px' }}>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={showBoxes}
+                        onChange={() => setShowBoxes(prev => !prev)}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                    <span style={{ marginLeft: '12px' }}>
+                      {showBoxes ? 'Hide Bounding Boxes' : 'Show Bounding Boxes'}
+                    </span>
+                  </div>
+
+                  <div className="custom-toggle">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={showHeatmap}
+                        onChange={() => setShowHeatmap(prev => !prev)}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                    <span style={{ marginLeft: '12px' }}>
+                      {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
