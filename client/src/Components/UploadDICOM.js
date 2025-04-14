@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 
-const UploadDICOM = ({ setDicomData }) => {
+const UploadDICOM = ({ setDicomData, setMaskImage, setTumorFound }) => {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('No file chosen');
   const [error, setError] = useState('');
@@ -33,32 +33,41 @@ const UploadDICOM = ({ setDicomData }) => {
     setLoading(true);
     if (!file) {
       setError('Please select a file to upload.');
+      setLoading(false);
       return;
     }
-  
+
     const formData = new FormData();
     formData.append('dicomFile', file);
-  
+
     try {
       const response = await fetch('http://localhost:5000/upload-dicom', {
         method: 'POST',
         body: formData,
       });
-  
+
       if (!response.ok) {
         const result = await response.json();
         setError(result.error || 'Unknown error occurred.');
         return;
       }
-  
+
       const data = await response.json(); 
-  
+
+      // Reset previous analysis data in localStorage
+      localStorage.removeItem('maskImage');
+      localStorage.removeItem('tumorFound');
+
+      setMaskImage(null);
+      setTumorFound(null);
+
+      // Update state with new file
       setDicomData({
         imageUrl: data.image,          // base64 image string
         fileName: fileName,
         patientInfo: data.patient      // contains id, sex, age
       });
-  
+
       navigate('/image');
     } catch (err) {
       setError('Error uploading file: ' + err.message);
@@ -66,7 +75,6 @@ const UploadDICOM = ({ setDicomData }) => {
       setLoading(false);
     }
   };
-  
 
   return (
     <div className="upload-dicom">
@@ -87,6 +95,7 @@ const UploadDICOM = ({ setDicomData }) => {
           if (selectedFile) {
             setFile(selectedFile);
             setFileName(selectedFile.name);
+            setError('');
           } else {
             setFile(null);
             setFileName('No file chosen');
@@ -108,18 +117,18 @@ const UploadDICOM = ({ setDicomData }) => {
       <div>
         {loading ? (
           <div className="loading-container">
-            <span className="loader" style={{paddingTop: "5px"}}></span>
-              <p style={{paddingTop: "5px"}}>Uploading</p>
+            <span className="loader" style={{ paddingTop: "5px" }}></span>
+            <p style={{ paddingTop: "5px" }}>Uploading</p>
           </div>
-          ) : (
-            <button
-              className={`upload-button ${!file || loading ? 'disabled' : ''}`}
-              onClick={handleUpload}
-              disabled={!file || loading}>
-              Upload DICOM
-            </button>
-
-          )}
+        ) : (
+          <button
+            className={`upload-button ${!file || loading ? 'disabled' : ''}`}
+            onClick={handleUpload}
+            disabled={!file || loading}
+          >
+            Upload DICOM
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import {
   BrowserRouter as Router,
@@ -14,10 +14,27 @@ import AnalyzedImage from './Components/AnalyzedImage';
 import WelcomePage from './Components/WelcomePage';
 
 function App() {
-  const [dicomData, setDicomData] = useState({ imageUrl: null, fileName: null, patientInfo: null });
-  const [preprocessedImage, setPreprocessedImage] = useState(null);
-  const [maskImage, setMaskImage] = useState(null);
+  // Load only lightweight data from localStorage (no imageUrl)
+  const [dicomData, setDicomData] = useState(() => {
+    const saved = localStorage.getItem('dicomData');
+    return saved
+      ? { ...JSON.parse(saved), imageUrl: null } // We'll fill imageUrl after upload
+      : { imageUrl: null, fileName: null, patientInfo: null };
+  });
+
+  const [maskImage, setMaskImage] = useState(null); // not persisted anymore
   const [tumorFound, setTumorFound] = useState(null);
+  const [preprocessedImage, setPreprocessedImage] = useState(null); // not persisted
+
+  // Save only lightweight info
+  useEffect(() => {
+    const { fileName, patientInfo } = dicomData;
+    try {
+      localStorage.setItem('dicomData', JSON.stringify({ fileName, patientInfo }));
+    } catch (err) {
+      console.warn('Could not store dicomData:', err.message);
+    }
+  }, [dicomData]);
 
   return (
     <Router>
@@ -78,7 +95,8 @@ function AppContent({
           .map((_, i) => byteCharacters.charCodeAt(i));
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: 'image/png' });
-        setMaskImage(URL.createObjectURL(blob));
+        const url = URL.createObjectURL(blob);
+        setMaskImage(url);
       }
 
       navigate('/analyzed-image');
@@ -91,21 +109,18 @@ function AppContent({
 
   return (
     <div className="App">
-        <header className="App-header">
-          <div className="header-left">
-            <img src="/logo.png" alt="Logo" className="logo" />
-            <h1 className="site-title">AIRA – AI Radiology Assistant for Mammography</h1>
-          </div>
+      <header className="App-header">
+        <div className="header-left">
+          <img src="/logo.png" alt="Logo" className="logo" />
+          <h1 className="site-title">AIRA – AI Radiology Assistant for Mammography</h1>
+        </div>
 
-        
-          {location.pathname === '/' && (
-            <button className="login-top-right" onClick={() => navigate('/login')}>
-              Login
-            </button>
-          )}
-        </header>
-
-      
+        {location.pathname === '/' && (
+          <button className="login-top-right" onClick={() => navigate('/login')}>
+            Login
+          </button>
+        )}
+      </header>
 
       <div className="main-content">
         <Routes>
@@ -117,7 +132,17 @@ function AppContent({
             path="/upload"
             element={
               <UploadDICOM
-                setDicomData={setDicomData}
+                setDicomData={(data) => {
+                  // Clear previous analysis results
+                  setMaskImage(null);
+                  setTumorFound(null);
+                  localStorage.removeItem('dicomData');
+
+                  // Set new data (with imageUrl now included)
+                  setDicomData(data);
+                }}
+                setMaskImage={setMaskImage}
+                setTumorFound={setTumorFound}
                 navigateToImage={() => navigate('/image')}
               />
             }
@@ -134,7 +159,7 @@ function AppContent({
                     <div className="image-and-info-row">
                       <div className="patient-info-box">
                         <h4><strong>Patient Info:</strong></h4>
-                        <div style={{ textAlign: "left" }}>
+                        <div style={{ textAlign: 'left' }}>
                           <p><strong>ID:</strong> {dicomData.patientInfo?.id || 'N/A'}</p>
                           <p><strong>Sex:</strong> {dicomData.patientInfo?.sex || 'N/A'}</p>
                           <p><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
@@ -146,9 +171,9 @@ function AppContent({
                       </div>
                     </div>
 
-
                     <div>
                       <button className="top-left-button" onClick={() => navigate('/upload')}>Back</button>
+
                       {loading ? (
                         <div className="loading-container">
                           <span className="loader"></span>
@@ -156,6 +181,11 @@ function AppContent({
                         </div>
                       ) : (
                         <button className="button" onClick={handleAnalyze}>Analyze</button>
+                      )}
+
+                      {/* Show forward button only if analysis is complete */}
+                      {maskImage && tumorFound !== null && (
+                        <button className="top-right-button" onClick={() => navigate('/analyzed-image')}>Forward</button>
                       )}
                     </div>
                   </div>

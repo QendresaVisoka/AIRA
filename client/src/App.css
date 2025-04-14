@@ -532,3 +532,15 @@ input:checked + .slider:before {
   color: #ff0084;
   border: 1px solid #ff0084;
 }
+
+.top-right-button {
+  position: absolute;
+  top: 0px;
+  right: 15px;
+  z-index: 10;
+  padding: 10px 20px;
+  background-color: #ff0084;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+}

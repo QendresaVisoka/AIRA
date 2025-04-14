@@ -297,7 +297,7 @@ def get_heatmap_legend():
 
     # === ADD TEXT LABELS BELOW ===
     label_values = [0.0, 0.5, 1.0]
-    label_positions = [0, width // 2 - 10, width - 25]
+    label_positions = [0, width // 2 - 10, width - 30]
 
     for value, x in zip(label_values, label_positions):
         cv2.putText(
