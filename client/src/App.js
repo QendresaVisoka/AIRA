@@ -126,7 +126,10 @@ function AppContent({
         <Routes>
           <Route path="/" element={<WelcomePage />} />
 
-          <Route path="/login" element={<LoginPage />} />
+          <Route 
+            path="/login" 
+            element={
+            <LoginPage />} />
 
           <Route
             path="/upload"

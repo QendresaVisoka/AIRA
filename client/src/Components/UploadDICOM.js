@@ -77,58 +77,80 @@ const UploadDICOM = ({ setDicomData, setMaskImage, setTumorFound }) => {
   };
 
   return (
-    <div className="upload-dicom">
-      <h2 className="upload-title">Upload DICOM File</h2>
+    <div
+      style={{
+        backgroundImage: 'url("/login-background.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+      }}
+    >
+      <div className="upload-dicom">
 
-      <div {...getRootProps()} className="dropzone">
-        <input {...getInputProps()} />
-        <p>Drag & drop your DICOM file here, or click to select a file</p>
-      </div>
-
-      <input
-        type="file"
-        accept=".dcm"
-        ref={fileInputRef}
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const selectedFile = e.target.files[0];
-          if (selectedFile) {
-            setFile(selectedFile);
-            setFileName(selectedFile.name);
-            setError('');
-          } else {
-            setFile(null);
-            setFileName('No file chosen');
-          }
-        }}
-      />
-
-      <button
-        className="choose-file-button"
-        onClick={() => fileInputRef.current.click()}
-        type="button"
-      >
-        Choose File
-      </button>
-
-      <p className="file-name">{fileName}</p>
-      {error && <p className="error-text">{error}</p>}
-
-      <div>
-        {loading ? (
-          <div className="loading-container">
-            <span className="loader" style={{ paddingTop: "5px" }}></span>
-            <p style={{ paddingTop: "5px" }}>Uploading</p>
-          </div>
-        ) : (
-          <button
-            className={`upload-button ${!file || loading ? 'disabled' : ''}`}
-            onClick={handleUpload}
-            disabled={!file || loading}
-          >
-            Upload DICOM
+        <div>
+          <button className='top-left-button'onClick={() => navigate('/login')}>
+            Back
           </button>
-        )}
+        </div>
+
+        <h2 className="upload-title">Upload DICOM File</h2>
+
+        <div {...getRootProps()} className="dropzone">
+          <input {...getInputProps()} />
+          <p>Drag & drop your DICOM file here, or click to select a file</p>
+        </div>
+
+        <input
+          type="file"
+          accept=".dcm"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const selectedFile = e.target.files[0];
+            if (selectedFile) {
+              setFile(selectedFile);
+              setFileName(selectedFile.name);
+              setError('');
+            } else {
+              setFile(null);
+              setFileName('No file chosen');
+            }
+          }}
+        />
+
+        <button
+          className="choose-file-button"
+          onClick={() => fileInputRef.current.click()}
+          type="button"
+        >
+          Choose File
+        </button>
+
+        <p className="file-name">{fileName}</p>
+        {error && <p className="error-text">{error}</p>}
+
+        <div>
+          {loading ? (
+            <div className="loading-container">
+              <span className="loader" style={{ paddingTop: "5px" }}></span>
+              <p style={{ paddingTop: "5px" }}>Uploading</p>
+            </div>
+          ) : (
+            <button
+              className={`upload-button ${!file || loading ? 'disabled' : ''}`}
+              onClick={handleUpload}
+              disabled={!file || loading}
+            >
+              Upload DICOM
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

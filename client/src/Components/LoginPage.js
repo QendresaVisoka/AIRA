@@ -19,33 +19,61 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="login-box">
-      <h2>Please login to continue</h2>
-      <form onSubmit={handleLogin}>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
+    <div
+      style={{
+        backgroundImage: 'url("/login-background.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+      }}
+    >
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+      <div className="login-box">
 
-        {error && <p className="error-message">{error}</p>}
+        <div>
+          <button className='top-left-button' onClick={() => navigate('/')}>
+            Back
+          </button>
+        </div>
 
-        <button type="submit" disabled={!username || !password}>
+        <h2>Please login to continue</h2>
+        <form onSubmit={handleLogin}>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            style={{ width: '100%', marginBottom: '1rem', padding: '10px' }}
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ width: '100%', marginBottom: '1rem', padding: '10px' }}
+          />
+
+          {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+
+          <button
+            type="submit"
+            disabled={!username || !password}
+            style={{ width: '100%', padding: '10px' }}
+          >
             Login
-        </button>
-  
+          </button>
+        </form>
 
-      </form>
+      </div>
     </div>
   );
 };

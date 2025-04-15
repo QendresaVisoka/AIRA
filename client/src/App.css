@@ -18,7 +18,7 @@ body {
 
 /* Header Section */
 .App-header {
-  background-color: rgb(24, 24, 24);
+  background-color: rgba(0, 0, 0, 0.7);
   color: rgb(249, 249, 249);
   width: 100%;
   display: flex;
@@ -52,14 +52,16 @@ body {
 
 /* Upload Section */
 .upload-dicom {
-  background-color: #444;
+  background-color: rgba(68, 68, 68, 0.6); /* same as #444 but with 80% opacity */
   border-radius: 10px;
-  padding: 40px;
+  padding: 40px 90px;
   width: 600px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
   margin-top: 20px;
   text-align: center;
+  position: relative;
 }
+
 
 .upload-title {
   font-size: 28px;
@@ -182,8 +184,9 @@ button:disabled {
 .image-container {
   width: 70%; /*wenn fit-content dann nur so gross wie bilder im container, besser für screen-split*/
   max-width: 100%;
-  max-height: fit-content;    
-  background-color: #333;
+  height: 70%;
+  max-height: 100%;    
+  background-color: rgba(68, 68, 68, 0.7);
   padding: 10px;
   border-radius: 10px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
@@ -458,25 +461,20 @@ input:checked + .slider:before {
 }
 
 .login-box {
-  background-color: #333;
-  padding: 40px;
+  background-color: rgba(68, 68, 68, 0.6);
+  padding: 40px 200px;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   text-align: center;
   width: 100%;
   max-width: 400px;
   margin: 40px auto;
+  position: relative;
 }
 
 .login-box h2 {
   color: #ffffff;
-  margin-bottom: 10px;
-}
-
-.subtitle {
-  color: #ccc;
-  font-size: 14px;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
 
@@ -488,7 +486,7 @@ input:checked + .slider:before {
   border: none;
   border-radius: 8px;
   color: white;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .login-box form input:focus {
