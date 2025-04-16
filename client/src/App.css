@@ -52,9 +52,9 @@ body {
 
 /* Upload Section */
 .upload-dicom {
-  background-color: rgba(68, 68, 68, 0.6); /* same as #444 but with 80% opacity */
+  background-color: rgba(68, 68, 68, 0.6); 
   border-radius: 10px;
-  padding: 40px 90px;
+  padding: 60px 110px;
   width: 600px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
   margin-top: 20px;
@@ -72,48 +72,21 @@ body {
 .dropzone {
   border: 2px dashed #ccc;
   border-radius: 10px;
-  padding: 40px;
+  padding: 45px;
   cursor: pointer;
   margin-bottom: 30px;
-  background-color: #555;
+  background-color: rgba(255,120,168, 0.2);
   transition: background-color 0.3s ease;
 }
 
 .dropzone:hover {
-  background-color: #666;
+  background-color: rgba(255,120,168, 0.4);
 }
 
 .dropzone p {
   margin: 0;
   color: #ddd;
-  font-size: 18px;
-}
-
-/* File Input Styles */
-.file-input {
-  display: block;
-  margin: 0 auto 20px auto;
-  padding: 12px;
-  font-size: 16px;
-  color: white;
-  background-color: #007bff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.file-input::file-selector-button {
-  padding: 12px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.file-input::file-selector-button:hover {
-  background-color: #0056b3;
+  font-size: 20px;
 }
 
 /* File Name Display */
@@ -184,8 +157,7 @@ button:disabled {
 .image-container {
   width: 70%; /*wenn fit-content dann nur so gross wie bilder im container, besser für screen-split*/
   max-width: 100%;
-  height: 70%;
-  max-height: 100%;    
+  height: fit-content; 
   background-color: rgba(68, 68, 68, 0.7);
   padding: 10px;
   border-radius: 10px;
@@ -194,6 +166,7 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   position: relative;
+  margin-top: -80px;
 }
 
 
@@ -261,7 +234,7 @@ button:disabled {
   cursor: pointer;
   top: 0; left: 0;
   right: 0; bottom: 0;
-  background-color: #970d70;
+  background-color: #bf0063;
   transition: 0.4s;
   border-radius: 34px;
 }
@@ -273,7 +246,7 @@ button:disabled {
   width: 20px;
   left: 4px;
   bottom: 4px;
-  background-color: #ccc;
+  background-color: #ffeaf6;
   transition: 0.4s;
   border-radius: 50%;
 }
@@ -461,8 +434,8 @@ input:checked + .slider:before {
 }
 
 .login-box {
-  background-color: rgba(68, 68, 68, 0.6);
-  padding: 40px 200px;
+  background-color: rgba(68, 68, 68, 0.6); 
+  padding: 80px 240px;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   text-align: center;
@@ -482,15 +455,20 @@ input:checked + .slider:before {
   width: 100%;
   padding: 12px;
   margin: 10px 0;
-  background: #444;
+  background: rgba(255, 255, 255, 0.771);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: #ff0084;
   font-size: 20px;
 }
 
 .login-box form input:focus {
   outline: 2px solid #ff0084;
+}
+
+.login-box form input::placeholder {
+  color: #444;
+  opacity: 1;
 }
 
 

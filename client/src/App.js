@@ -154,47 +154,63 @@ function AppContent({
           <Route
             path="/image"
             element={
-              <div className="image-container">
-                {dicomData.imageUrl ? (
-                  <div className="image-display">
-                    <h3>{dicomData.fileName}</h3>
+              <div
+                style={{
+                  backgroundImage: 'url("/login-background.png")',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  width: '100vw',
+                  height: '100vh',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  position: 'relative',
+                }}
+              >
 
-                    <div className="image-and-info-row">
-                      <div className="patient-info-box">
-                        <h4><strong>Patient Info:</strong></h4>
-                        <div style={{ textAlign: 'left' }}>
-                          <p><strong>ID:</strong> {dicomData.patientInfo?.id || 'N/A'}</p>
-                          <p><strong>Sex:</strong> {dicomData.patientInfo?.sex || 'N/A'}</p>
-                          <p><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
+                <div className="image-container">
+                  {dicomData.imageUrl ? (
+                    <div className="image-display">
+                      <h3>{dicomData.fileName}</h3>
+
+                      <div className="image-and-info-row">
+                        <div className="patient-info-box">
+                          <h4><strong>Patient Info:</strong></h4>
+                          <div style={{ textAlign: 'left' }}>
+                            <p><strong>ID:</strong> {dicomData.patientInfo?.id || 'N/A'}</p>
+                            <p><strong>Sex:</strong> {dicomData.patientInfo?.sex || 'N/A'}</p>
+                            <p><strong>Age:</strong> {dicomData.patientInfo?.age || 'N/A'}</p>
+                          </div>
+                        </div>
+
+                        <div className="image-wrapper">
+                          <img src={dicomData.imageUrl} alt="DICOM" />
                         </div>
                       </div>
 
-                      <div className="image-wrapper">
-                        <img src={dicomData.imageUrl} alt="DICOM" />
+                      <div>
+                        <button className="top-left-button" onClick={() => navigate('/upload')}>Back</button>
+
+                        {loading ? (
+                          <div className="loading-container">
+                            <span className="loader"></span>
+                            <p>Analyzing</p>
+                          </div>
+                        ) : (
+                          <button className="button" onClick={handleAnalyze}>Analyze</button>
+                        )}
+
+                        {/* Show forward button only if analysis is complete */}
+                        {maskImage && tumorFound !== null && (
+                          <button className="top-right-button" onClick={() => navigate('/analyzed-image')}>Forward</button>
+                        )}
                       </div>
                     </div>
-
-                    <div>
-                      <button className="top-left-button" onClick={() => navigate('/upload')}>Back</button>
-
-                      {loading ? (
-                        <div className="loading-container">
-                          <span className="loader"></span>
-                          <p>Analyzing</p>
-                        </div>
-                      ) : (
-                        <button className="button" onClick={handleAnalyze}>Analyze</button>
-                      )}
-
-                      {/* Show forward button only if analysis is complete */}
-                      {maskImage && tumorFound !== null && (
-                        <button className="top-right-button" onClick={() => navigate('/analyzed-image')}>Forward</button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <p>No image uploaded.</p>
-                )}
+                  ) : (
+                    <p>No image uploaded.</p>
+                  )}
+                </div>
               </div>
             }
           />
