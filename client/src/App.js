@@ -14,19 +14,18 @@ import AnalyzedImage from './Components/AnalyzedImage';
 import WelcomePage from './Components/WelcomePage';
 
 function App() {
-  // Load only lightweight data from localStorage (no imageUrl)
   const [dicomData, setDicomData] = useState(() => {
     const saved = localStorage.getItem('dicomData');
     return saved
-      ? { ...JSON.parse(saved), imageUrl: null } // We'll fill imageUrl after upload
+      ? { ...JSON.parse(saved), imageUrl: null }
       : { imageUrl: null, fileName: null, patientInfo: null };
   });
 
-  const [maskImage, setMaskImage] = useState(null); // not persisted anymore
+  const [maskImage, setMaskImage] = useState(null);
   const [tumorFound, setTumorFound] = useState(null);
-  const [preprocessedImage, setPreprocessedImage] = useState(null); // not persisted
+  const [preprocessedImage, setPreprocessedImage] = useState(null);
+  const [analysisCompleted, setAnalysisCompleted] = useState(false); // NEW
 
-  // Save only lightweight info
   useEffect(() => {
     const { fileName, patientInfo } = dicomData;
     try {
@@ -47,6 +46,8 @@ function App() {
         setMaskImage={setMaskImage}
         tumorFound={tumorFound}
         setTumorFound={setTumorFound}
+        analysisCompleted={analysisCompleted}
+        setAnalysisCompleted={setAnalysisCompleted}
       />
     </Router>
   );
@@ -61,6 +62,8 @@ function AppContent({
   setMaskImage,
   tumorFound,
   setTumorFound,
+  analysisCompleted,
+  setAnalysisCompleted
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -99,6 +102,7 @@ function AppContent({
         setMaskImage(url);
       }
 
+      setAnalysisCompleted(true); // Mark as complete
       navigate('/analyzed-image');
     } catch (err) {
       alert('Analysis failed: ' + err.message);
@@ -126,22 +130,17 @@ function AppContent({
         <Routes>
           <Route path="/" element={<WelcomePage />} />
 
-          <Route 
-            path="/login" 
-            element={
-            <LoginPage />} />
+          <Route path="/login" element={<LoginPage />} />
 
           <Route
             path="/upload"
             element={
               <UploadDICOM
                 setDicomData={(data) => {
-                  // Clear previous analysis results
                   setMaskImage(null);
                   setTumorFound(null);
                   localStorage.removeItem('dicomData');
-
-                  // Set new data (with imageUrl now included)
+                  setAnalysisCompleted(false); // Reset analysis
                   setDicomData(data);
                 }}
                 setMaskImage={setMaskImage}
@@ -168,12 +167,10 @@ function AppContent({
                   position: 'relative',
                 }}
               >
-
                 <div className="image-container">
                   {dicomData.imageUrl ? (
                     <div className="image-display">
                       <h3>{dicomData.fileName}</h3>
-
                       <div className="image-and-info-row">
                         <div className="patient-info-box">
                           <h4><strong>Patient Info:</strong></h4>
@@ -198,10 +195,15 @@ function AppContent({
                             <p>Analyzing</p>
                           </div>
                         ) : (
-                          <button className="button" onClick={handleAnalyze}>Analyze</button>
+                          <button
+                            className={`button ${analysisCompleted ? 'disabled-button' : ''}`}
+                            onClick={handleAnalyze}
+                            disabled={analysisCompleted}
+                          >
+                            Analyze
+                          </button>
                         )}
 
-                        {/* Show forward button only if analysis is complete */}
                         {maskImage && tumorFound !== null && (
                           <button className="top-right-button" onClick={() => navigate('/analyzed-image')}>Forward</button>
                         )}

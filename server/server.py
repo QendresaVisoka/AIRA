@@ -23,7 +23,7 @@ CORS(app)
 UPLOAD_FOLDER = 'uploads'
 PROCESSED_FOLDER = 'processed_images'
 PREDICTIONS_FOLDER = 'predictions'
-MODEL_PATH = 'models\EfficientNet_Depth5_DoubleConv_25Layers_3patches_cleaned_data_randomstate42.keras'
+MODEL_PATH = 'models/tumorpatches6healthy2_Differentaugmentation_unfreeze0.keras'
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
