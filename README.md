@@ -10,6 +10,7 @@
 - **Lesion Segmentation**: Delineates lesion boundaries to support clinical interpretation.
 - **Diagnostic Insights**: Measures and reports tumor size based on segmented areas.
 - **Multiple Viewing Modes**: Enables improved visualization to assist radiological review.
+- 
 ![AIRA Analysis](images/Analyzed_tumor_image_full.png)
 
 ## Model Architecture
@@ -18,6 +19,7 @@ AIRA is built using a **U-Net** architecture with an **EfficientNet-B0 encoder**
 
 - **Transfer Learning**: EfficientNet-B0 provides a strong feature extractor that was adapted to the mammography domain.
 - **Segmentation Network**: The U-Net decoder enables pixel-wise segmentation suited for medical imaging applications.
+- 
 ![Model Architecture](images/Model.png)
 
 ## Dataset
