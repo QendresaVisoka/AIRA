@@ -2,7 +2,7 @@
 
 **AIRA** is an AI-powered assistant developed to support radiologists in the detection and segmentation of breast cancer in mammogram images. It provides tools for identifying suspicious lesions, segmenting tumor regions, and generating diagnostic information such as lesion size and enhanced visualization.
 
-![AIRA Welcome Page](images/Welcome Page.png)
+![AIRA Welcome Page](images/"Welcome Page.png")
 
 ## Key Features
 
