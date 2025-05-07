@@ -19,7 +19,7 @@ AIRA is built using a **U-Net** architecture with an **EfficientNet-B0 encoder**
 
 - **Transfer Learning**: EfficientNet-B0 provides a strong feature extractor that was adapted to the mammography domain.
 - **Segmentation Network**: The U-Net decoder enables pixel-wise segmentation suited for medical imaging applications.
-- 
+  
 ![Model Architecture](images/Model.png)
 
 ## Dataset
