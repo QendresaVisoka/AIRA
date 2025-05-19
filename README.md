@@ -30,8 +30,7 @@ Training and validation were conducted using the **CSAW-CC** dataset, a mammogra
 
 AIRA is intended for **research and educational use only**. It is **not certified for clinical diagnosis** and should not replace the judgment of qualified medical professionals.
 
-## Set-Up
-# Requirements
+# Setup Requirements
 
 ### Python Packages (backend)
 See `server/requirements.txt`. Key packages include:
