@@ -1,3 +1,4 @@
+# ----------Imports----------
 from tensorflow.keras.models import load_model
 from flask import Flask, request, jsonify, send_file, make_response
 from flask_cors import CORS
@@ -15,11 +16,11 @@ from flask import send_from_directory
 import base64
 import json
 
-
+# ----------App Initialization----------
 app = Flask(__name__)
 CORS(app)
 
-# Directory configurations
+# ----------Path Configurations----------
 UPLOAD_FOLDER = 'uploads'
 PROCESSED_FOLDER = 'processed_images'
 PREDICTIONS_FOLDER = 'predictions'
@@ -34,6 +35,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 os.makedirs(PREDICTIONS_FOLDER, exist_ok=True)
 
+# ============Functions============
+# ----Custom Losses and Metrics----
 # Dice Coefficient
 def dice_coefficient(y_true, y_pred):
     smooth = 1e-6
@@ -65,14 +68,188 @@ def weighted_binary_crossentropy(y_true, y_pred, pos_weight=3.0, neg_weight=1.0)
 def combined_loss(y_true, y_pred):
     return dice_loss(y_true, y_pred) + weighted_binary_crossentropy(y_true, y_pred)
 
-# Load the model
+# =========Helper Functions==========
+
+# Function to extract bounding boxes from a binary mask
+def bbox_from_mask(mask):
+    mask = mask.squeeze()
+    components, num_features = label(mask)
+    bboxes = []
+    for i in range(1, num_features + 1):
+        rows, cols = np.where(components == i)
+        if rows.size > 0 and cols.size > 0:
+            x_min, x_max = cols.min(), cols.max()
+            y_min, y_max = rows.min(), rows.max()
+            bboxes.append([x_min, y_min, x_max, y_max])
+    return bboxes
+
+# -----------Preprocessing Functions-----------
+# Function to crop the image based on contours
+def crop_image(image):
+    try:
+        # Convert to grayscale if the image is RGB
+        if len(image.shape) == 3:
+            gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        else:
+            gray_image = image
+
+        # Thresholding to create a binary image
+        _, thresh = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY)
+        thresh = thresh.astype(np.uint8)
+        # Find contours
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Filter contours based on area
+        min_contour_area = 1000
+        filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_contour_area]
+
+        # Check if any contours rtemain after filtering
+        if len(filtered_contours) > 0:
+            # Find the largest contour and crop the image
+            largest_contour = max(filtered_contours, key=cv2.contourArea)
+            # Get the bounding rectangle of the largest contour
+            x, y, w, h = cv2.boundingRect(largest_contour)
+            # Crop the image using the bounding rectangle
+            cropped = image[y:y+h, x:x+w]
+            return cropped, (x, y, w, h), image.shape, cropped.shape
+        else:
+            return image, None, image.shape, image.shape
+    except Exception as e:
+        logging.error(f"Error cropping image: {str(e)}")
+        return image, None, image.shape, image.shape
+    
+# Function to resize the image
+def resize_image(image, target_size=(224, 224)):
+    try:
+        # Normalize to uint8 if needed
+        if image.dtype != np.uint8:
+            image = ((image - np.min(image)) / (np.max(image) - np.min(image)) * 255).astype(np.uint8)
+        # Get the original size and calculate the new size
+        old_size = image.shape[:2]
+        ratio = min(target_size[1]/old_size[1], target_size[0]/old_size[0])
+        new_size = tuple([int(x * ratio) for x in old_size])
+        # Resize the image
+        resized_image = cv2.resize(image, (new_size[1], new_size[0]))
+        return resized_image, new_size, ratio
+    except Exception as e:
+        logging.error(f"Error resizing image: {str(e)}")
+        return image, old_size, 1
+
+# Function to pad the image
+def pad_image(resized_image, target_size=(224, 224)):
+    try:
+        # Get the resized image dimensions
+        resized_height, resized_width = resized_image.shape[:2]
+        # Calculate the difference between the target size and the resized image
+        delta_w = int(target_size[1] - resized_width)
+        delta_h = int(target_size[0] - resized_height)
+        # Calculate padding values
+        top, bottom = int(delta_h // 2), int(delta_h - (delta_h // 2))
+        left, right = int(delta_w // 2), int(delta_w - (delta_w // 2))
+        padding = (top, bottom, left, right)
+        # Pad the image
+        padded_image = cv2.copyMakeBorder(resized_image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0)
+        return padded_image, padding
+    except Exception as e:
+        logging.error(f"Error padding image: {str(e)}")
+        return resized_image, (0, 0, 0, 0)
+
+# Function to preprocess the image
+def preprocess_image(image, target_size=(224, 224)):
+    try:
+        # Crop the image based on contours
+        cropped_image, bbox, original_size, cropped_shape = crop_image(image)
+        if bbox is None:
+            raise ValueError("No valid contours found; using original image for further processing.")
+        # Resize the cropped image
+        resized_image, new_size, ratio = resize_image(cropped_image, target_size)
+        # Pad the resized image
+        padded_image, padding = pad_image(resized_image, target_size)
+        return padded_image, padding, bbox, cropped_shape
+    except Exception as e:
+        logging.error(f"Error preprocessing image: {str(e)}")
+        return image, (0, 0, 0, 0), None, image.shape
+
+# -----------Prediction Function-----------
+# Function to predict the full mask from patches
+def predict_full_mask_from_patches(model, image, patch_size=(128, 128), stride=64, padding=32):
+    ndim = image.ndim
+    # Pad the image to handle edge cases
+    if ndim == 2:
+        image_padded = np.pad(image, ((padding, padding), (padding, padding)), mode='reflect')
+    elif ndim == 3:
+        image_padded = np.pad(image, ((padding, padding), (padding, padding), (0, 0)), mode='reflect')
+    else:
+        raise ValueError("Image must be 2D or 3D.")
+
+    # Get the padded image dimensions
+    H_pad, W_pad = image_padded.shape[:2]
+    # Initialize the full mask and weight map
+    full_mask = np.zeros((H_pad, W_pad), dtype=np.float32)
+    weight_map = np.zeros((H_pad, W_pad), dtype=np.float32)
+
+    # Iterate over the image in patches
+    for y in range(0, H_pad - patch_size[0] + 1, stride):
+        for x in range(0, W_pad - patch_size[1] + 1, stride):
+            # Extract the patch
+            patch = image_padded[y:y+patch_size[0], x:x+patch_size[1]]
+            # Ensure the patch is in the correct format for the model
+            patch_input = np.expand_dims(patch, axis=0).astype(np.float32)
+            if patch_input.shape[-1] != 3:
+                patch_input = np.repeat(patch_input[..., np.newaxis], 3, axis=-1)
+
+            # Predict the mask for the patch
+            pred = model.predict(patch_input, verbose=0)[0, :, :, 0]
+            full_mask[y:y+patch_size[0], x:x+patch_size[1]] += pred
+            weight_map[y:y+patch_size[0], x:x+patch_size[1]] += 1.0
+
+    # Normalize the full mask by the weight map
+    # Avoid division by zero
+    weight_map[weight_map == 0] = 1.0
+    averaged_mask = full_mask / weight_map
+
+    return averaged_mask[padding:-padding, padding:-padding]
+
+# -----------Postprocessing Function-----------
+# Function to postprocess the mask to fit the original image
+def postprocess_mask(padded_image, padding, original_size, bbox, cropped_shape, target_size=(224, 224)):
+   
+    # Extract the padding values (top, bottom, left, right)
+    top, bottom, left, right = padding
+    original_height, original_width = original_size
+
+    # Remove the padding from the image
+    image_without_padding = padded_image[top:target_size[0] - bottom, left:target_size[1] - right]
+
+    # Resize the image based on the input aspect ratio to match the cropped shape
+    image_height, image_width = image_without_padding.shape[:2]
+    cropped_height, cropped_width = cropped_shape
+
+    # Resize the image to fit within the cropped shape (keeping aspect ratio)
+    resized_image = cv2.resize(image_without_padding, (cropped_width, cropped_height), interpolation=cv2.INTER_LINEAR)
+
+    # Place the resized image into the expanded canvas based on the bounding box
+    x, y, w, h = bbox
+
+    # Create an empty canvas for the restored image (of the original size)
+    expanded_image = np.zeros((original_height, original_width), dtype=np.uint8)
+
+    # Ensure that the resized cropped region is placed back into the correct location in the original image
+    expanded_image[y:y+h, x:x+w] = resized_image[:h, :w]  
+
+    return image_without_padding, resized_image, expanded_image
+
+# ------------File Validation Function-------
+# Function to check if the file is a DICOM file
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'dcm'
+  
+
+# ----------Load the model----------
 model = load_model(MODEL_PATH, custom_objects={'combined_loss': combined_loss, 'dice_coefficient': dice_coefficient, 'dice_loss': dice_loss, 'weighted_binary_crossentropy': weighted_binary_crossentropy})
 
 
-# Allowed file validation
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'dcm'
-
+# ----------Flask Routes----------
+# Route to upload DICOM file
 @app.route('/upload-dicom', methods=['POST'])
 def upload_dicom():
     if 'dicomFile' not in request.files:
@@ -121,7 +298,7 @@ def upload_dicom():
     else:
         return jsonify({'error': 'Invalid file type, only DICOM (.dcm) files are allowed'}), 400
 
-
+# Route to preprocess DICOM file
 @app.route('/preprocess-dicom', methods=['POST'])
 def preprocess_dicom():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'latest.dcm')
@@ -151,7 +328,7 @@ def preprocess_dicom():
         return jsonify({'error': f'Error processing DICOM file: {str(e)}'}), 500
     
 
-
+# Route to predict mask
 @app.route('/predict-mask', methods=['POST'])
 def predict_mask():
     try:
@@ -195,7 +372,8 @@ def predict_mask():
         # Save bounding boxes
         bounding_boxes = bbox_from_mask(restored_mask)
         bounding_boxes = [[int(x) for x in box] for box in bounding_boxes]
-
+        
+        # Save pixel spacing for calculating mm measurements
         pixel_spacing = dicom_data.get("PixelSpacing", [1.0, 1.0])
         pixel_spacing = [float(x) for x in pixel_spacing]
 
@@ -203,12 +381,18 @@ def predict_mask():
             json.dump({'boxes': bounding_boxes, 'pixel_spacing': pixel_spacing}, f)
 
         # Create overlay
+        # Map intensity values to JET colormap
         heatmap = cv2.applyColorMap(restored_mask, cv2.COLORMAP_JET)
+        # Generate a 3-channel transparency mask to isolate tumor regions
         transparency_mask = restored_mask > 0
         transparency_mask = np.stack([transparency_mask] * 3, axis=-1)
+        # Convert grayscale image to BGR, needed for heatmap overlay
         original_image = cv2.cvtColor(pixel_data, cv2.COLOR_GRAY2BGR)
+        # Smooth heatmap for better visualization
         heatmap = cv2.GaussianBlur(heatmap, (17, 17), 20)
+        # Remove heatmap color outside the tumor regions
         heatmap[~transparency_mask] = 0
+        # Overlay heatmap on the original image
         overlay = cv2.addWeighted(original_image, 1, heatmap, 1, 0)
         cv2.imwrite(os.path.join(PREDICTIONS_FOLDER, 'overlay.png'), overlay)
 
@@ -232,7 +416,7 @@ def predict_mask():
 
 
 
-
+# Route to get the image with the bounidng box
 @app.route('/get-bounding-boxes', methods=['GET'])
 def get_bounding_boxes():
     try:
@@ -245,7 +429,7 @@ def get_bounding_boxes():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
+# Route to get the overlay image
 @app.route('/get-overlay', methods=['GET'])
 def get_overlay():
     try:
@@ -257,7 +441,7 @@ def get_overlay():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
+# Route to get the image with the heatmap
 @app.route('/get-heatmap-legend', methods=['GET'])
 def get_heatmap_legend():
     width = request.args.get('width', default=120, type=int)   # Total legend width
@@ -271,9 +455,9 @@ def get_heatmap_legend():
     # Apply JET colormap and alpha
     heatmap = cv2.applyColorMap(gradient, cv2.COLORMAP_JET)
     alpha_channel = np.full((height, width), int(255 * 0.5), dtype=np.uint8)
-    heatmap = np.dstack((heatmap, alpha_channel))  # shape: (H, W, 4)
+    heatmap = np.dstack((heatmap, alpha_channel)) 
 
-    # === BLEND HEATMAP ON LIGHT GREY BACKGROUND ===
+    # Blend with a light grey background
     # Create background (light grey)
     background = np.full((height, width, 3), 220, dtype=np.uint8)
 
@@ -287,15 +471,15 @@ def get_heatmap_legend():
     # Alpha blending
     blended = (alpha * heatmap_rgb + (1 - alpha) * background).astype(np.uint8)
 
-    # === CREATE CANVAS WITH SPACE FOR LABELS ===
+    # Create canvas for the legend
     total_height = height + label_area_height
     canvas = np.zeros((total_height, width, 4), dtype=np.uint8)
 
     # Place blended heatmap onto canvas
     canvas[:height, :, :3] = blended
-    canvas[:height, :, 3] = 255  # Set alpha fully opaque
+    canvas[:height, :, 3] = 255 
 
-    # === ADD TEXT LABELS BELOW ===
+    # Add labels below the gradient
     label_values = [0.0, 0.5, 1.0]
     label_positions = [0, width // 2 - 10, width - 30]
 
@@ -311,155 +495,12 @@ def get_heatmap_legend():
             cv2.LINE_AA
         )
 
-    # === ENCODE AND SEND PNG ===
+    # Convert to PNG
     _, buffer = cv2.imencode('.png', canvas)
     response = make_response(buffer.tobytes())
     response.headers['Content-Type'] = 'image/png'
     return response
 
-
-
-
-
-
-
-
-def bbox_from_mask(mask):
-    """Extract bounding box coordinates from a binary mask"""
-    mask = mask.squeeze()
-    components, num_features = label(mask)
-    bboxes = []
-    for i in range(1, num_features + 1):
-        rows, cols = np.where(components == i)
-        if rows.size > 0 and cols.size > 0:
-            x_min, x_max = cols.min(), cols.max()
-            y_min, y_max = rows.min(), rows.max()
-            bboxes.append([x_min, y_min, x_max, y_max])
-    return bboxes
-
-
-
-def postprocess_mask(padded_image, padding, original_size, bbox, cropped_shape, target_size=(224, 224)):
-   
-    # Step 1: Extract the padding values (top, bottom, left, right)
-    top, bottom, left, right = padding
-    original_height, original_width = original_size
-
-    # Step 2: Remove the padding from the image (work with the padded 224x224 image)
-    image_without_padding = padded_image[top:target_size[0] - bottom, left:target_size[1] - right]
-
-    # Step 3: Resize the image based on the input aspect ratio to match the cropped shape
-    image_height, image_width = image_without_padding.shape[:2]
-    cropped_height, cropped_width = cropped_shape
-
-    # Resize the image to fit within the cropped shape (keeping aspect ratio)
-    resized_image = cv2.resize(image_without_padding, (cropped_width, cropped_height), interpolation=cv2.INTER_LINEAR)
-
-    # Step 4: Place the resized image into the expanded canvas based on the bounding box
-    x, y, w, h = bbox
-
-    # Create an empty canvas for the restored image (of the original size)
-    expanded_image = np.zeros((original_height, original_width), dtype=np.uint8)
-
-    # Ensure that we place the resized cropped region back into the correct location in the original image
-    expanded_image[y:y+h, x:x+w] = resized_image[:h, :w]  # Make sure the resized image fits in the bounding box area
-
-    return image_without_padding, resized_image, expanded_image
-
-
-def predict_full_mask_from_patches(model, image, patch_size=(128, 128), stride=64, padding=32):
-    ndim = image.ndim
-    if ndim == 2:
-        image_padded = np.pad(image, ((padding, padding), (padding, padding)), mode='reflect')
-    elif ndim == 3:
-        image_padded = np.pad(image, ((padding, padding), (padding, padding), (0, 0)), mode='reflect')
-    else:
-        raise ValueError("Image must be 2D or 3D.")
-
-    H_pad, W_pad = image_padded.shape[:2]
-    full_mask = np.zeros((H_pad, W_pad), dtype=np.float32)
-    weight_map = np.zeros((H_pad, W_pad), dtype=np.float32)
-
-    for y in range(0, H_pad - patch_size[0] + 1, stride):
-        for x in range(0, W_pad - patch_size[1] + 1, stride):
-            patch = image_padded[y:y+patch_size[0], x:x+patch_size[1]]
-            patch_input = np.expand_dims(patch, axis=0).astype(np.float32)
-            if patch_input.shape[-1] != 3:
-                patch_input = np.repeat(patch_input[..., np.newaxis], 3, axis=-1)
-
-            pred = model.predict(patch_input, verbose=0)[0, :, :, 0]
-            full_mask[y:y+patch_size[0], x:x+patch_size[1]] += pred
-            weight_map[y:y+patch_size[0], x:x+patch_size[1]] += 1.0
-
-    weight_map[weight_map == 0] = 1.0
-    averaged_mask = full_mask / weight_map
-
-    return averaged_mask[padding:-padding, padding:-padding]
-
-
-
-def crop_image(image):
-    try:
-        if len(image.shape) == 3:
-            gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        else:
-            gray_image = image
-
-        _, thresh = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY)
-        thresh = thresh.astype(np.uint8)
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        min_contour_area = 1000
-        filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_contour_area]
-
-        if len(filtered_contours) > 0:
-            largest_contour = max(filtered_contours, key=cv2.contourArea)
-            x, y, w, h = cv2.boundingRect(largest_contour)
-            cropped = image[y:y+h, x:x+w]
-            return cropped, (x, y, w, h), image.shape, cropped.shape
-        else:
-            return image, None, image.shape, image.shape
-    except Exception as e:
-        logging.error(f"Error cropping image: {str(e)}")
-        return image, None, image.shape, image.shape
-
-def resize_image(image, target_size=(224, 224)):
-    try:
-        if image.dtype != np.uint8:
-            image = ((image - np.min(image)) / (np.max(image) - np.min(image)) * 255).astype(np.uint8)
-        old_size = image.shape[:2]
-        ratio = min(target_size[1]/old_size[1], target_size[0]/old_size[0])
-        new_size = tuple([int(x * ratio) for x in old_size])
-        resized_image = cv2.resize(image, (new_size[1], new_size[0]))
-        return resized_image, new_size, ratio
-    except Exception as e:
-        logging.error(f"Error resizing image: {str(e)}")
-        return image, old_size, 1
-
-def pad_image(resized_image, target_size=(224, 224)):
-    try:
-        resized_height, resized_width = resized_image.shape[:2]
-        delta_w = int(target_size[1] - resized_width)
-        delta_h = int(target_size[0] - resized_height)
-        top, bottom = int(delta_h // 2), int(delta_h - (delta_h // 2))
-        left, right = int(delta_w // 2), int(delta_w - (delta_w // 2))
-        padding = (top, bottom, left, right)
-        padded_image = cv2.copyMakeBorder(resized_image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0)
-        return padded_image, padding
-    except Exception as e:
-        logging.error(f"Error padding image: {str(e)}")
-        return resized_image, (0, 0, 0, 0)
-
-def preprocess_image(image, target_size=(224, 224)):
-    try:
-        cropped_image, bbox, original_size, cropped_shape = crop_image(image)
-        if bbox is None:
-            raise ValueError("No valid contours found; using original image for further processing.")
-        resized_image, new_size, ratio = resize_image(cropped_image, target_size)
-        padded_image, padding = pad_image(resized_image, target_size)
-        return padded_image, padding, bbox, cropped_shape
-    except Exception as e:
-        logging.error(f"Error preprocessing image: {str(e)}")
-        return image, (0, 0, 0, 0), None, image.shape
-
+# -----------Start App----------
 if __name__ == '__main__':
     app.run(debug=True)

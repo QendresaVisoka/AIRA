@@ -1,3 +1,4 @@
+// Importing necessary libraries and components
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import {
@@ -13,7 +14,9 @@ import UploadDICOM from './Components/UploadDICOM';
 import AnalyzedImage from './Components/AnalyzedImage';
 import WelcomePage from './Components/WelcomePage';
 
+// Main App component
 function App() {
+  // Loading the DICOM data from local storage
   const [dicomData, setDicomData] = useState(() => {
     const saved = localStorage.getItem('dicomData');
     return saved
@@ -21,11 +24,13 @@ function App() {
       : { imageUrl: null, fileName: null, patientInfo: null };
   });
 
+  // State variables
   const [maskImage, setMaskImage] = useState(null);
   const [tumorFound, setTumorFound] = useState(null);
   const [preprocessedImage, setPreprocessedImage] = useState(null);
   const [analysisCompleted, setAnalysisCompleted] = useState(false); // NEW
 
+  // Saving the DICOM data to local storage whenever it changes
   useEffect(() => {
     const { fileName, patientInfo } = dicomData;
     try {
@@ -69,28 +74,29 @@ function AppContent({
   const location = useLocation();
   const [loading, setLoading] = useState(false);
 
+  // Main image analysis function: sends requests to the backend
   const handleAnalyze = async () => {
     setLoading(true);
     const startTime = performance.now();
     try {
+      // Preprocess the DICOM image
       const preResponse = await fetch('http://localhost:5000/preprocess-dicom', {
         method: 'POST',
       });
-
       if (!preResponse.ok) throw new Error('Preprocessing failed');
       const preBlob = await preResponse.blob();
       const preUrl = URL.createObjectURL(preBlob);
       setPreprocessedImage(preUrl);
 
+      // Predict the mask
       const predResponse = await fetch('http://localhost:5000/predict-mask', {
         method: 'POST',
       });
-
       if (!predResponse.ok) throw new Error('Prediction failed');
-
       const result = await predResponse.json();
       setTumorFound(result.tumorFound ?? false);
 
+      // Convert the base64 image to a Blob 
       if (result.image) {
         const base64Data = result.image.split(',')[1];
         const byteCharacters = atob(base64Data);
@@ -117,6 +123,7 @@ function AppContent({
   };
 
   return (
+    // Main application structure
     <div className="App">
       <header className="App-header">
         <div className="header-left">
@@ -133,10 +140,13 @@ function AppContent({
 
       <div className="main-content">
         <Routes>
+          {/* WelcomePage route*/}
           <Route path="/" element={<WelcomePage />} />
 
+          {/*LoginPage route*/}
           <Route path="/login" element={<LoginPage />} />
 
+          {/*UploadDICOM route*/}
           <Route
             path="/upload"
             element={
@@ -155,6 +165,7 @@ function AppContent({
             }
           />
 
+          {/*Image route with Patient Metadata*/}
           <Route
             path="/image"
             element={
@@ -222,6 +233,7 @@ function AppContent({
             }
           />
 
+          {/* AnalyzedImage route*/}
           <Route
             path="/analyzed-image"
             element={

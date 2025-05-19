@@ -2,17 +2,23 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
+  // State variables for username, password, and error message
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // Function to handle login
   const handleLogin = (e) => {
     e.preventDefault();
 
+    // Check if the username and password are correct
+    // In a real application, you would send these to a server for validation
+    // Here logic is hardcoded for demonstration purposes
     if (username === 'admin' && password === 'AIRA') {
       setError('');
-      navigate('/upload');
+      // Redirect to the upload page
+      navigate('/upload'); 
     } else {
       setError('Invalid credentials. Try "admin" / "AIRA"');
     }

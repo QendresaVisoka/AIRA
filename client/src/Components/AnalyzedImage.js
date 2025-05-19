@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// State variables for image analysis
 const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound, dicomData }) => {
   const navigate = useNavigate();
-
   const [showBoxes, setShowBoxes] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [boxes, setBoxes] = useState([]);
@@ -13,6 +13,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound, dicomDa
   const [pixelSpacing, setPixelSpacing] = useState([1.0, 1.0]);
   const [legendUrl, setLegendUrl] = useState(null);
 
+  // Fetch bounding boxes and pixel spacing from the server
   useEffect(() => {
     const fetchBoundingBoxes = async () => {
       try {
@@ -27,6 +28,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound, dicomDa
     fetchBoundingBoxes();
   }, []);
 
+  // Fetch overlay image from the server
   useEffect(() => {
     const fetchOverlayImage = async () => {
       try {
@@ -43,6 +45,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound, dicomDa
     fetchOverlayImage();
   }, []);
 
+  // Fetch heatmap legend from the server
   useEffect(() => {
     const fetchLegend = async () => {
       try {
@@ -57,6 +60,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound, dicomDa
     fetchLegend();
   }, []);
 
+  // Draw bounding boxes on the canvas
   const drawBoxes = useCallback(() => {
     const canvas = canvasRef.current;
     const img = document.getElementById('analyzed-image');
@@ -88,6 +92,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound, dicomDa
     drawBoxes();
   }, [drawBoxes]);
 
+  // Calculate tumor sizes in pixels and millimeters
   const getTumorSizes = () => {
     const [rowSpacing, colSpacing] = pixelSpacing;
     return boxes.map(([x1, y1, x2, y2], idx) => {
@@ -123,7 +128,7 @@ const AnalyzedImage = ({ fileName, originalImage, maskImage, tumorFound, dicomDa
       <div className="image-container">
         <h3>{fileName}</h3>
 
-        <div className="image-content-wrapper" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+        <div className="image-content-wrapper"  style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
     
           <div className="patient-info-box" >
           <h4><strong>Patient Info:</strong></h4>

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 
+// State variables for file upload
 const UploadDICOM = ({ setDicomData, setMaskImage, setTumorFound }) => {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('No file chosen');
@@ -10,6 +11,7 @@ const UploadDICOM = ({ setDicomData, setMaskImage, setTumorFound }) => {
   const fileInputRef = useRef();
   const [loading, setLoading] = useState(false);
 
+  // Function to handle file drop
   const onDrop = (acceptedFiles) => {
     const uploadedFile = acceptedFiles[0];
     if (uploadedFile && uploadedFile.name.endsWith('.dcm')) {
@@ -28,7 +30,7 @@ const UploadDICOM = ({ setDicomData, setMaskImage, setTumorFound }) => {
     accept: { 'application/dicom': ['.dcm'] },
     multiple: false,
   });
-
+  // Function to handle file upload
   const handleUpload = async () => {
     setLoading(true);
     if (!file) {
@@ -124,8 +126,7 @@ const UploadDICOM = ({ setDicomData, setMaskImage, setTumorFound }) => {
           }}
         />
 
-        <button
-          className="choose-file-button"
+        <button 
           onClick={() => fileInputRef.current.click()}
           type="button"
         >
