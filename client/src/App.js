@@ -71,6 +71,7 @@ function AppContent({
 
   const handleAnalyze = async () => {
     setLoading(true);
+    const startTime = performance.now();
     try {
       const preResponse = await fetch('http://localhost:5000/preprocess-dicom', {
         method: 'POST',
@@ -103,6 +104,10 @@ function AppContent({
       }
 
       setAnalysisCompleted(true); // Mark as complete
+      const endTime = performance.now();
+      const timeTaken = ((endTime - startTime) / 1000).toFixed(2);
+      console.log(`Analysis completed in ${timeTaken} seconds`);
+      
       navigate('/analyzed-image');
     } catch (err) {
       alert('Analysis failed: ' + err.message);
