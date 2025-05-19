@@ -10,7 +10,7 @@
 - **Lesion Segmentation**: Delineates lesion boundaries to support clinical interpretation.
 - **Diagnostic Insights**: Measures and reports tumor size based on segmented areas.
 - **Multiple Viewing Modes**: Enables improved visualization to assist radiological review.
-- 
+  
 ![AIRA Analysis](images/Analyzed_tumor_image_full.png)
 
 ## Model Architecture
@@ -25,10 +25,6 @@ AIRA is built using a **U-Net** architecture with an **EfficientNet-B0 encoder**
 ## Dataset
 
 Training and validation were conducted using the **CSAW-CC** dataset, a mammography dataset containing labeled examples of cancerous lesions. The dataset supports the development of robust models for clinical research.
-
-## Disclaimer
-
-AIRA is intended for **research and educational use only**. It is **not certified for clinical diagnosis** and should not replace the judgment of qualified medical professionals.
 
 # Setup Requirements
 
@@ -67,4 +63,7 @@ npm start        # Launch React frontend at http://localhost:3000
 ```
 ### 4. Open the application in your browser at http://localhost:3000.
 
+## Disclaimer
+
+AIRA is intended for **research and educational use only**. It is **not certified for clinical diagnosis** and should not replace the judgment of qualified medical professionals.
 
