@@ -69,7 +69,6 @@ def combined_loss(y_true, y_pred):
     return dice_loss(y_true, y_pred) + weighted_binary_crossentropy(y_true, y_pred)
 
 # =========Helper Functions==========
-
 # Function to extract bounding boxes from a binary mask
 def bbox_from_mask(mask):
     mask = mask.squeeze()
@@ -415,6 +414,18 @@ def predict_mask():
         return jsonify({'error': str(e)}), 500
 
 
+# Route to get the overlay image
+@app.route('/get-overlay', methods=['GET'])
+def get_overlay():
+    try:
+        # Serve the overlay image from the PREDICTIONS_FOLDER directory
+        overlay_path = os.path.join(PREDICTIONS_FOLDER, 'overlay.png')
+        if not os.path.exists(overlay_path):
+            return jsonify({'error': 'No overlay image found'}), 404
+        return send_from_directory(PREDICTIONS_FOLDER, 'overlay.png')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 # Route to get the image with the bounidng box
 @app.route('/get-bounding-boxes', methods=['GET'])
@@ -428,18 +439,7 @@ def get_bounding_boxes():
         return jsonify(data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
-# Route to get the overlay image
-@app.route('/get-overlay', methods=['GET'])
-def get_overlay():
-    try:
-        # Serve the overlay image from the PREDICTIONS_FOLDER directory
-        overlay_path = os.path.join(PREDICTIONS_FOLDER, 'overlay.png')
-        if not os.path.exists(overlay_path):
-            return jsonify({'error': 'No overlay image found'}), 404
-        return send_from_directory(PREDICTIONS_FOLDER, 'overlay.png')
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
 
 # Route to get the image with the heatmap
 @app.route('/get-heatmap-legend', methods=['GET'])
