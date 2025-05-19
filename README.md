@@ -26,11 +26,46 @@ AIRA is built using a **U-Net** architecture with an **EfficientNet-B0 encoder**
 
 Training and validation were conducted using the **CSAW-CC** dataset, a mammography dataset containing labeled examples of cancerous lesions. The dataset supports the development of robust models for clinical research.
 
-## Future Work
- 
-- Risk assessment and lesion classification (malignant/benign)
-- BI-RADS category prediction  
-
 ## Disclaimer
 
 AIRA is intended for **research and educational use only**. It is **not certified for clinical diagnosis** and should not replace the judgment of qualified medical professionals.
+
+## Set-Up
+# Requirements
+
+### Python Packages (backend)
+See `server/requirements.txt`. Key packages include:
+
+- Python 3.11.0
+- TensorFlow 2.19.0
+- Flask 3.1.0
+- NumPy, OpenCV, SciPy, Matplotlib, Pillow
+
+### Node.js (frontend)
+- Node.js and npm installed  
+
+---
+
+# Setup Instructions
+
+### 1. Clone the Repository
+```bash
+git clone <repository_url>
+```
+### 2. Backend Setup
+```bash
+cd server
+py -3.11 -m venv venv              # Create virtual environment with Python 3.11
+.\venv\Scripts\activate            # Activate the environment
+pip install -r requirements.txt   # Install required Python packages
+python server.py                  # Start the Flask server
+```
+### 3. Frontend Setup
+```bash
+cd client
+npm install      # Install dependencies
+npm start        # Launch React frontend at http://localhost:3000
+```
+### 4. Open the application in your browser at http://localhost:3000.
+
+
